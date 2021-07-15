@@ -1,0 +1,123 @@
+syntax = "proto3";
+option csharp_namespace = "GrpcGreeter";
+
+
+import "google/protobuf/empty.proto";
+import "Protos/Common.proto";
+import "Protos/Threats.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "ThreatsManagerProto";
+
+//
+// ThreatsManager
+// The threats manager service provides public calls into the MEDUSA system for
+// threat-related actions. The client can subscribe to threats as
+// they occur. This interface also supports addition of threats into the system.
+//
+service ThreatsManager {
+
+	//
+	// getVersion
+	// Get the version of the threats manager.
+	// Input parameters: none
+	// Output: VersionInfo proto class, containing version details
+	//
+
+	rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+	//
+	// subscribe to threats from the MEDUSA correlation application (currently MAS)
+	// stream without a definitive end to the set. The client will continue to receive
+	// ThreatInfo objects until the request is made to stop or the server is shut down.
+	// Input: Details about the subscription for this client
+	// Output: The stream through which threats will be received by the client as they
+	// occur within the MEDUSA system.
+	//
+	rpc subscribe (ClientThreatsSubscription) returns (stream ThreatInfo);
+
+	//
+	// cancelSubscription
+	// This calls cancels / turns off the stream being sent via subscribe.
+	// Input: None
+	// Output: A standard response class with success/failure information
+	//
+	rpc cancelSubscription (google.protobuf.Empty) returns (ResponseInfo);
+
+	//
+	// addThreat
+	// Ability to add a complete threat into the DON system. This will bypass the
+	// MEDUSA correlator, and will instead act as if it came from the correlator
+	// and into our threat prioritization process.
+	// Input: The threat definition to include into the MEDUSA system
+	// Output: A standard response class with success/failure information
+	//
+	rpc addThreat (ThreatInfo) returns (ResponseInfo);
+
+}
+
+//
+// ClientThreatsSubscription
+// inbound subscription details for this client. ability to subscribe to different
+// event types from the service.
+//
+message ClientThreatsSubscription {
+	repeated ClientThreatFilter filters = 1;
+}
+//
+//  ClientThreatFilter
+//  Details for filtering out threat that this client would receive via a subscription.
+//
+message ClientThreatFilter {
+	ClientThreatsFilterType filterType = 1;
+	//inclusive is true is the client would like to filter out threats outside of these bounds
+	//inclusive is false if the client would like to filter out threats inside of these bounds.
+	bool inclusive = 2;
+	oneof data {
+		//the priority threshold the client would like to filter
+		int32 priority = 3;
+		//the affiliation client would like to filter
+		TargetAffiliation affiliation = 4;
+		//the area threshold client would like to filter
+		ThreatsFilterAreaDetails area = 5;
+		//the source the client would like to filter
+		string source = 6;
+	}
+}
+
+enum ClientThreatsFilterType {
+	FILTER_BY_PRIORITY = 0;
+	FILTER_BY_AFFILIATION = 1;
+	FILTER_BY_AREA = 2;
+	FILTER_BY_SOURCE = 3;
+}
+
+message ThreatsFilterAreaDetails {
+	//unimplemented
+}
+
+//
+// ThreatResponseType
+// When a client receives a ThreatSubscriptionResponse, it will be either a threat or a track.
+// This tells us which of these things it is.
+//
+enum ThreatResponseType {
+	ThreatResponse = 0;
+	TrackResponse  = 1;
+}
+
+//
+// ThreatSubscriptionResponse
+// wrapper around a threats manager response. Based on client subscription it could be
+// a track or a threat
+//
+message ThreatSubscriptionResponse {
+	ThreatResponseType type = 1;
+	oneof data {
+		ThreatInfo threat = 2;
+		TrackInfo track = 3;
+	}
+}
+
+

@@ -1,0 +1,815 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "GrpcGreeter";
+
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Protos/Common.proto";
+import "Protos/SystemConfiguration.proto";
+import "Protos/Configuration.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "PersistenceManagerProto";
+
+//
+// The persistence manager service provides an abstraction data tier for saving to a DB and loading data
+// from that DB.
+//
+service PersistenceManager {
+  //
+  // getVersion
+  // get the version of the persistence manager. this is a unary blocking call.
+  //
+  rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+  //
+  // addLogSnapshot
+  // take this one logging event and add it to our persistence manager
+  //
+  rpc addLogSnapshot (LoggingSnapshot) returns (ResponseInfo);
+
+  //
+  // queryEngagements
+  // get the engagement data. This is a unary blocking call.
+  //
+  rpc queryEngagements (EngagementRequest) returns (stream EngagementData);
+
+  //
+  // requestThreats
+  // get the threat summaries. this is a unary blocking call.
+  //
+  rpc requestThreatSummaryInfo (ThreatSummaryRequestInfo) returns (stream ThreatSummaryInfo);
+
+  //
+  // getIncidentReport
+  // get the incident report data. This is a unary blocking call.
+  //
+  rpc getIncidentReportData (IncidentReportRequest) returns (stream IncidentReport);
+
+  //
+  // queryThreatsByThreatId
+  // get threat data. this is a unary blocking call.
+  //
+  rpc queryThreatsByThreatId (StartTimeThreatIdRequest) returns (stream ThreatReportInfo);
+
+  //
+  // queryThreatsByTime
+  // get threat data. this is a unary blocking call.
+  //
+  rpc queryThreatsByTime (StartTimeEndTimeRequest) returns (stream ThreatReportInfo);
+
+  //
+  // queryThreatsByDbId
+  // get threat data. this is a unary blocking call.
+  //
+  rpc queryThreatsByDbId (ThreatDbIdRequest) returns (stream ThreatReportInfo);
+
+  //
+  // requestProtectedAreas
+  // get the protected areas. this is a unary blocking call.
+  //
+  rpc getProtectedAreas (StartTimeEndTimeRequest) returns (stream IncidentReport);
+
+  //
+  // queryAllTracksByTime
+  // get track data. this is a unary blocking call.
+  //
+  rpc queryAllTracksByTime (StartTimeEndTimeRequest) returns (stream TrackReportInfo);
+
+  //
+  // queryAllTracksByMedusaTrackId
+  // get track data. this is a unary blocking call.
+  //
+  rpc queryAllTracksByMedusaTrackId (StartTimeTrackIdRequest) returns (stream TrackReportInfo);
+
+  //
+  // queryAllTracksByDbId
+  // get track data. this is a unary blocking call.
+  //
+  rpc queryAllTracksByDbId (TrackDbIdRequest) returns (stream TrackReportInfo);
+
+  //
+  // queryAllEngagementsByTime
+  // get engagement command info data. this is a unary blocking call.
+  //
+  rpc queryAllEngagementsByTime (EngagementRequest) returns (stream EngagementCommandInfo);
+
+  //
+  // queryDeviceStatusByTime
+  // get Device status info data. this is a unary blocking call.
+  //
+  rpc queryDeviceStatusByTime (StartTimeEndTimeRequest) returns (stream DeviceStatusInfo);
+
+  //
+  // queryClassificationLevelByTime
+  // get the classification level. This is a unary blocking call.
+  //
+  rpc queryClassificationLevelByTime(StartTimeEndTimeRequest) returns (stream ClassificationInfo);
+}
+
+//
+// LoggingSourceType enumeration
+// This defines where this log message is coming from
+//
+enum LoggingSourceType {
+  LOG_SOURCE_UNKNOWN = 0;
+  LOG_SOURCE_TPM = 1;
+  LOG_SOURCE_CC = 2;
+  LOG_SOURCE_FC = 3;
+  LOG_SOURCE_VC = 4;
+  LOG_SOURCE_HMIC = 5;
+  LOG_SOURCE_APM = 6;
+  LOG_SOURCE_SDK = 7;
+  LOG_SOURCE_HMI = 8;
+  LOG_SOURCE_CLIENT = 9;
+}
+
+//
+// LoggingPriority enumeration
+// Defines a priority for this log message
+//
+enum LoggingPriority {
+  LOG_LEVEL_UNKNOWN = 0;
+  LOG_LEVEL_TRACE = 1;
+  LOG_LEVEL_DEBUG = 2;
+  LOG_LEVEL_INFO = 3;
+  LOG_LEVEL_WARN = 4;
+  LOG_LEVEL_ERROR = 5;
+}
+
+//
+// LoggingMessageType enumeration
+//
+enum LoggingMessageType {
+  LOG_TYPE_UNKNOWN = 0;
+  LOG_THREAT_RECEIVED = 1;
+  LOG_TRACK_RECEIVED = 2;
+  LOG_STATUS_RECEIVED = 3;
+  LOG_BUILDING_THREAT = 4;
+  LOG_BEGIN_MISSION = 5;
+  LOG_AUTHORIZE = 6;
+  LOG_JAM_ON = 7;
+  LOG_JAM_OFF = 8;
+  LOG_QUICK_JAM = 9;
+  LOG_PNT_JAM = 10;
+  LOG_AIM = 11;
+  LOG_JAM_ALL_ON = 12;
+  LOG_JAM_ALL_OFF = 13;
+  LOG_SHOW_VIDEO = 14;
+  LOG_START_MISSION = 15;
+  LOG_END_MISSION = 16;
+  LOG_ACTIVATE_WEAPON = 17;
+  LOG_REMOVE_WEAPON = 18;
+  LOG_THREAT_ACKNOWLEDGE = 19;
+  LOG_THREATS_ACKNOWLEDGE = 20;
+  LOG_CONTROLLER_NUDGE_DOWN = 21;
+  LOG_CONTROLLER_NUDGE_UP = 22;
+  LOG_CONTROLLER_NUDGE_RIGHT = 23;
+  LOG_CONTROLLER_NUDGE_LEFT = 24;
+  LOG_CONTROLLER_OPTIONS = 25;
+  LOG_CONTROLLER_NUC = 26;
+  LOG_CONTROLLER_R1 = 27;
+  LOG_CONTROLLER_R2 = 28;
+  LOG_CONTROLLER_L1 = 29;
+  LOG_CONTROLLER_L2 = 30;
+  LOG_CONTROLLER_AUTO_FOCUS = 31;
+  LOG_CONTROLLER_SLEW_HOME = 32;
+  LOG_CONTROLLER_IGNORE_SLEW = 33;
+  LOG_CONTROLLER_TOGGLE_TRACKING = 34;
+  LOG_USER_CLEARED_NOTIFICATION = 35;
+  LOG_USER_GOTO_THREAT = 36;
+  LOG_USER_GOTO_DEVICE = 37;
+  LOG_USER_GOTO_LOCATION = 38;
+  LOG_USER_SA_MEASUREMENT = 39;
+  LOG_THREAT_ALARMING = 40;
+  LOG_CONTROLLER_CONNECTED = 41;
+  LOG_CONTROLLER_DISCONNECTED = 42;
+  LOG_CONTROLLER_DEVICE_CHANGE = 43;
+  LOG_VIDEO_SELECTION = 44;
+  LOG_REMOVE_VIDEO = 45;
+  LOG_SHOW_VIDEOS = 46;
+  LOG_CLOSE_ALL_VIDEOS = 47;
+  LOG_REMOVE_ACTIVE_VIDEO = 48;
+  LOG_AUTHORIZE_FIRE = 49;
+  LOG_JREAP_AUTHORIZE_TEXT = 50;
+  LOG_ACTIVATE_COUNTERMEASURE = 51;
+  LOG_HALT_COUNTERMEASURE = 52;
+  LOG_REQUEST_STATUS = 53;
+  LOG_NUC = 54;
+  LOG_CHANGE_VIDEO_STEAM = 55;
+  LOG_SLEW = 56;
+  LOG_FORWARD_TRACKS = 57;
+  LOG_STOP_MANUAL_SLEW = 58;
+  LOG_AUTO_FOCUS = 59;
+  LOG_TOGGLE_TRACKING = 60;
+  LOG_IGNORE_SLEW = 61;
+  LOG_RADIATE = 62;
+  LOG_SLEW_TO_POINT = 63;
+  LOG_AFFILIATE = 64;
+  LOG_SENSOR_ZOOM = 65;
+  LOG_SENSOR_NUDGE = 66;
+  LOG_WEAPON_NUDGE = 67;
+  LOG_SEND_SA = 68;
+  LOG_MANUAL_SLEW = 69;
+  LOG_ENCLOSURE = 70;
+  LOG_AIM_TO_POINT = 71;
+  LOG_ERROR = 72;
+  LOG_INITIALIZATION = 73;
+  LOG_STARTING = 74;
+  LOG_STOPPING = 75;
+  LOG_RECEIVED_COMMAND = 76;
+  LOG_PUBLISH_STATUS = 77;
+  LOG_REGISTRATION = 78;
+  LOG_LOST_HEARTBEAT = 79;
+  LOG_CLOSE_SERVICE = 80;
+  LOG_STOP_HEARTBEAT = 81;
+  LOG_SEND_REGISTRATION = 82;
+  LOG_UNREGISTER = 83;
+  LOG_NEW_HEARTBEAT = 84;
+  LOG_ADD_MODULE = 85;
+  LOG_WARNING = 86;
+  LOG_CLOSING_DEVICE = 87;
+  LOG_SERVICE_STATUS = 88;
+  LOG_LOADING_DEVICE = 89;
+  LOG_OPEN_TRANSPORT = 90;
+  LOG_PROCESS_MESSAGE = 91;
+  LOG_SEND_MESSAGE = 92;
+  LOG_SEND_MESSAGE_TO_SERVICE = 93;
+  LOG_SEND_AIM_RESPONSE_MESSAGE = 94;
+  LOG_SEND_VIDEO_CONTROLLER_MESSAGE = 95;
+  LOG_SEND_SA_MESSAGE = 96;
+  LOG_SEND_FC_MESSAGE = 97;
+  LOG_SEND_APM_MESSAGE = 98;
+  LOG_SEND_END_MISSION_MESSAGE = 99;
+  LOG_SEND_AUTHORIZE_FIRE_MESSAGE = 100;
+  LOG_SEND_FORWARD_TRACK_MESSAGE = 101;
+  LOG_SEND_AFFILIATE_COMMAND = 102;
+  LOG_OPEN_SERVICE_COMMAND_PORTS = 103;
+  LOG_CLOSE_SERVICE_COMMAND_PORTS = 104;
+  LOG_SEND_REQUEST_STATUS = 105;
+  LOG_REGISTRATION_COMMAND_COMPLETE = 106;
+  LOG_ERROR_OPENING_TRANSPORT = 107;
+  LOG_HMI_TIMEOUT_EVENT = 108;
+  LOG_CREATE_DON_SERVICE = 109;
+  LOG_THREATS_NOT_SENT = 110;
+  LOG_RECEIVED_DATA = 111;
+  LOG_FAILED_TO_DECODE_MESSAGE = 112;
+  LOG_CREATE_DATA_REPOSITORY_LIST = 113;
+  LOG_ADD_HMI_MESSAGE = 114;
+  LOG_ADD_PUBLICATIONS = 115;
+  LOG_ADD_DEVICES = 116;
+  LOG_ADD_PROTECTED_AREA = 117;
+  LOG_BUILD_PROTECTED_AREA = 118;
+  LOG_ADD_HMI_LIST = 119;
+  LOG_PUBLICATION = 120;
+  LOG_ADD_TRANSPORT = 121;
+  LOG_REMOVE_TRANSPORT = 122;
+  LOG_MARK_SERVICE = 123;
+  LOG_MARK_PROPERTY = 124;
+  LOG_SET_THREAT_AND_DEVICE = 125;
+  LOG_SEND_RESULT = 126;
+  LOG_TESTING = 127;
+  LOG_SEND_COMMAND = 128;
+  LOG_ON_PUBLICATION = 129;
+  LOG_ALERT = 130;
+  LOG_PROCESS_COMMAND = 131;
+  LOG_STATUS_REQUESTED = 132;
+  LOG_CONTROL_MSG_RECEIVED = 133;
+  LOG_START_RECORDING = 134;
+  LOG_STOP_RECORDING = 135;
+  LOG_START_FFMPEG = 136;
+  LOG_STOP_FFMPEG = 137;
+  LOG_ADD_RECORDER = 138;
+  LOG_CONTROLLER_ACTION = 139;
+  LOG_USER_AIM = 140;
+  LOG_USER_SLEW = 141;
+  LOG_USER_SLEW_TO_POINT = 142;
+  LOG_USER_AFFILIATE = 143;
+  LOG_USER_JAM_ON = 144;
+  LOG_USER_JAM_ALL_ON = 145;
+  LOG_USER_JAM_OFF = 146;
+  LOG_USER_JAM_ALL_OFF = 147;
+  LOG_USER_AUTHORIZE_FIRE = 148;
+  LOG_USER_ACTIVATE_COUNTERMEASURE = 149;
+  LOG_USER_END_MISSION = 150;
+  LOG_USER_HALT_COUNTERMEASURE = 151;
+  LOG_DEVICE_STATUS = 152;
+  LOG_TRACK_DROPPED = 153;
+  LOG_USER_FIRE = 154;
+  LOG_USER_FIRE_CANCEL = 155;
+  LOG_USER_ENERGIZE = 156;
+  LOG_USER_ENERGIZE_CANCEL = 157;
+  LOG_USER_DEPLOY = 158;
+  LOG_USER_DEPLOY_CANCEL = 159;
+  LOG_USER_PROBE = 160;
+  LOG_USER_PROBE_CANCEL = 161;
+}
+
+//
+// LoggingParameter enumeration
+//
+enum LoggingParameter {
+  PARAMETER_UNKNOWN = 0;
+  deviceId = 1;
+  clientEndPoint = 2;
+  endPoint = 3;
+  topic = 4;
+  isSuccess = 5;
+  deviceType = 6;
+  groupId = 7;
+  trackId = 8;
+  latitude = 9;
+  longitude = 10;
+  altitude = 11;
+  action = 12;
+  counterMeasure = 13;
+  counterMeasureState = 14;
+  threatId = 15;
+  comment = 16;
+  state = 17;
+  streamName = 18;
+  zoomType = 19;
+  nudgeType = 20;
+  x = 21;
+  y = 22;
+  deviceName = 23;
+  receivingHmi = 24;
+  sa = 25;
+  operation = 26;
+  type = 27;
+  count = 28;
+  videoId = 29;
+  notificationId = 30;
+  fromLatitude = 31;
+  fromLongitude = 32;
+  toLatitude = 33;
+  toLongitude = 34;
+  selected = 35;
+  videoName = 36;
+  providerId = 37;
+  affiliation = 38;
+  isBegin = 39;
+  isEnd = 40;
+  srcSys = 41;
+  srcTyp = 42;
+  recvTime = 43;
+  priority = 44;
+  ecef = 45;
+  azimuth = 46;
+  elevation = 47;
+  classification = 48;
+  signalType = 49;
+  signalConf = 50;
+  freq = 51;
+  vel = 52;
+  feature = 53;
+  drone = 54;
+  orgPos = 55;
+  trackCnt = 56;
+  childTracks = 57;
+  serviceName = 58;
+  serviceURI = 59;
+  reason = 60;
+  transportTo = 61;
+  isOpen = 62;
+  messageType = 63;
+  messageSubtype = 64;
+  running = 65;
+  registered = 66;
+  elapsedTime = 67;
+  destination = 68;
+  source = 69;
+  commandUri = 70;
+  heartbeatUri = 71;
+  status = 72;
+  statusSubtype = 73;
+  ecmType = 74;
+  alertType = 75;
+  alertSubtype = 76;
+  serviceId = 77;
+  alertText = 78;
+  to = 79;
+  from = 80;
+  aimMessage = 81;
+  donMessage = 82;
+  videoCommand = 83;
+  command = 84;
+  hmiName = 85;
+  connected = 86;
+  isPrimary = 87;
+  interval = 88;
+  configuration = 89;
+  heartbeatInterval = 90;
+  exitValue = 91;
+  key = 92;
+  isConnected = 93;
+  trackUri = 94;
+  threatUri = 95;
+  lla = 96;
+  is3dThreat = 97;
+  isNinja = 98;
+  speed = 99;
+  heading = 100;
+  predicted = 101;
+  impingeTime = 102;
+  isImminent = 103;
+  lookupTrackCnt = 104;
+  trackSignalType = 105;
+  trackSignalConf = 106;
+  trackMacAddress = 107;
+  trackClass = 108;
+  trackDrone = 109;
+  trackSourceType = 110;
+  isCoyoteInterceptor = 111;
+  isCoyoteTarget = 112;
+  trackGroup = 113;
+  counterMeasures = 114;
+  radiate = 115;
+  sensorLatitude = 116;
+  sensorLongitude = 117;
+  sensorAltitude = 118;
+  masPriority = 119;
+  sourceServer = 120;
+  macAddress = 121;
+  isOperational = 122;
+  warnings = 123;
+  deviceOperationalStatus = 124;
+}
+
+//
+// NameValuePair
+// a generic name-value pair
+//
+message NameValuePair {
+  LoggingParameter name = 1;
+  string value = 2;
+}
+
+//
+// LoggingSnapshot
+// Details for one logging event in our system sent to the persistence manager.
+//
+message LoggingSnapshot {
+  LoggingSourceType source = 1;
+  LoggingPriority priority = 2;
+  LoggingMessageType type = 3;
+  int64 timestamp = 4;
+  repeated NameValuePair values = 5;
+}
+
+//
+// EngagementRequest
+// the request for an Engagement summary
+//
+message EngagementRequest {
+  int64 startTime = 1;
+  int64 stopTime = 2;
+}
+
+//
+// EngagementData
+// the report data for a single row of the Engagement summary
+//
+message EngagementData {
+  bool success = 1; // if the request succeeded or not
+  string row = 2;   // A row of engagement data information
+}
+
+//
+// ThreatSummaryRequestInfo
+// Constraints on the requested threat information.
+//
+message ThreatSummaryRequestInfo {
+  int64 startTime = 1; // The start of the time span we wish to query
+  int64 endTime = 2;   // The end of the time span we wish to query
+}
+
+//
+// ThreatSummaryInfo
+// A single result of the requested threat information
+//
+message ThreatSummaryInfo {
+  bool success = 1;          // If the request succeeded or not.
+  int32 threatId = 2;        // The Medusa threat Id.
+  int32 threatDbId = 3;      // The unique database id for the threat.
+  string sourceSystem = 4;   //The system (correlator) this threat came from such as MAS, etc.
+  string sourceServer = 5;   // The physical server reporting this threat.
+  int64 lastTimeUpdated = 6; // The timestamp for when the row was last updated.
+  int32 isComplete = 7;      // The state of the threat. Made an int to match the schema.
+  int64 startTime = 8;       // The time which this threat is first detected.
+  int64 endTime = 9;         // The last time recorded for the threat.
+}
+
+//
+// IncidentReportRequest
+// The constraints for the requested incident report.
+//
+message IncidentReportRequest {
+  int32 threatDbId = 1; // The unique database threat Id to use for the report.
+}
+
+//
+// StartTimeIncidentReportRequest
+// The constraints for the requested incident report.
+//
+message StartTimeIncidentReportRequest {
+  int64 startTime = 1; // The start time for the incident report.
+}
+
+//
+// IncidentReportSubtype
+// The IncidentReport will contain ONE of these subtypes.
+//
+enum IncidentReportSubtype {
+  IR_EVENT_SUMMARY = 0;
+  IR_THREAT_POSITION = 1;
+  IR_METADATA = 2;
+  IR_DEVICE_POSITIONS = 3;
+  IR_PROTECTED_AREAS = 4;
+  IR_SYNOPSIS_INFO = 5;
+}
+
+//
+// IncidentReport
+// The top level message that will be streamed back when an incident report is requested.
+// It is actually made up of 6 sub-reports which will be streamed back-to-back within this
+// returned set. Each IncidentReport will contain ONE of the subreport types, defined
+// by IncidentReportSubtype value.
+//
+message IncidentReport {
+  bool success = 1;
+  IncidentReportSubtype type = 2;
+  oneof data {
+    DeviceConfiguration devices = 3;                // IncidentReportSubtype IR_DEVICE_POSITIONS
+    ProtectedAreaInfo pas = 4;                      // IncidentReportSubtype IR_PROTECTED_AREAS
+    IncidentReportMetadata metadata = 5;            // IncidentReportSubtype IR_METADATA
+    IncidentReportThreatSnapshot pos = 6;           // IncidentReportSubtype IR_THREAT_POSITION
+    IncidentReportSummaryEvents summaryEvents = 7;  // IncidentReportSubtype IR_EVENT_SUMMARY
+    IncidentReportSynopsisInfo synopsisInfo = 8;    // IncidentReportSubtype IR_SYNOPSIS_INFO
+  }
+}
+
+//
+// IncidentReportSummaryEventType
+// The possible event types for the main summary table.
+//
+enum IncidentReportSummaryEventType {
+  SUMMARY_INITIAL_DETECTION = 0;
+  SUMMARY_DROP_DETECTION = 1;
+  SUMMARY_PRIORITY_UPDATE = 2;
+  SUMMARY_IMMINENT_UPDATE = 3;
+  SUMMARY_THREAT_UPDATE = 4;
+  SUMMARY_AIM = 5;  // The remainder correspond with the possible commands in the engagement table.
+  SUMMARY_SLEW = 6;
+  SUMMARY_SLEW_TO_POINT = 7;
+  SUMMARY_AFFILIATE = 8;
+  SUMMARY_JAM_ON = 9;
+  SUMMARY_JAM_ALL_ON = 10;
+  SUMMARY_JAM_OFF = 11;
+  SUMMARY_JAM_ALL_OFF = 12;
+  SUMMARY_AUTHORIZE_FIRE = 13;
+  SUMMARY_ACTIVATE_COUNTERMEASURE = 14;
+  SUMMARY_END_MISSION = 15;
+  SUMMARY_HALT_COUNTERMEASURE = 16;
+}
+
+//
+// IncidentReportSynopsisInfo
+// A synopsis of the event.
+//
+message IncidentReportSynopsisInfo {
+  repeated string threatDetails = 1;     // The accumulation of threat details from the event summary report.
+  repeated string devicesOnline = 2;     // The devices in the configuration for this event.
+  int32 totalDetectionTime = 3;          // The total number of seconds this threat detection lasted.
+  repeated string sensorsCorrelated = 4; // The breakdown of sensor to track number for this threat "Q50 : 55"
+  repeated string countersUsed = 5;      // Any counters used against the threat during this incident.
+}
+
+//
+// IncidentReportSummaryEvents
+// The main summary table of the incident report.
+//
+message IncidentReportSummaryEvents {
+  bool success = 1;                                    // If the request succeeded or not.
+  int64 timestamp = 2;                                 // The timestamp of this particular event.
+  IncidentReportSummaryEventType type = 3;             // The type of the event.
+  int32 timeSinceInitialDetection = 4;                 // The number of seconds since initial threat detection.
+  google.protobuf.Int32Value threatId = 5;             // For now, this will always be the same for this report, but may not be defined for all events.
+  google.protobuf.Int32Value trackId = 6;              // The track id associated with this event. May not be defined for all events.
+  string engagingDevice = 7;                           // Device engaging the threat. May not be defined for all events.
+  string trackSource = 8;                              // Sensor that detected the track. May not be defined for all events.
+  IncidentReportThreatPosition position = 9;           // Threat position at the time of the event.
+  string threatDetails = 10;                           // ninja/coyote/wisp specifics
+  int32 priority = 11;                                 // Priority of the threat at the time of the event.
+  TargetAffiliation affiliation = 12;                  // Affiliation at the time of the event.
+  google.protobuf.DoubleValue speed = 13;              // optional speed of this threat in meters/second
+  google.protobuf.Int32Value summaryIndex = 14;        // An ID representing what happened at this point in time. May not be defined for all events.
+  google.protobuf.StringValue summaryDescription = 15; // Friendly text representing summaryIndex. May not be defined for all events.
+  google.protobuf.BoolValue isImminent = 16;           // Represents if the threat has been deemed imminent
+}
+
+//
+// IncidentReportMetadata
+// The metadata required for the incident report.
+//
+message IncidentReportMetadata {
+  int64 firstTimestamp = 1;  // The timestamp of the first threat detection.
+  int64 lastTimestamp = 2;   // The timestamp of the last threat information.
+  string classification = 3; // The classification of the report from the configuration file.
+}
+
+//
+// IncidentReportThreatPosition
+// The 2d or 3d position of the threat for the main summary table.
+//
+message IncidentReportThreatPosition {
+  oneof data {
+    CoordinateLla d3 = 2;   // For a 3d threat.
+    CoordinatePolar d2 = 3; // For a 2d threat.
+  }
+}
+
+//
+// IncidentReportThreatSnapshot
+// The position and affiliation of the threat at a point in time. This is for the path of the threat.
+//
+message IncidentReportThreatSnapshot {
+  int64 timestamp = 1;
+  IncidentReportThreatPosition position = 2; // Threat position at the given point in time.
+  TargetAffiliation affiliation = 3;         // The affiliation of the threat.
+}
+
+//
+// EngagementCommandInfo
+// The information recorded for an engagement command.
+//
+message EngagementCommandInfo {
+  bool success = 1;                                 // If the request succeeded or not.
+  int32 engagementCommandDbId = 2;                  // Database Id for this engagement command entry.
+  string commandMessageType = 3;                    // The command being used, JAM_ON, etc.
+  int64 timestamp = 4;                              // The time stamp for the command being recorded.
+  google.protobuf.StringValue deviceId = 5;         // The device performing the engagement.
+  google.protobuf.DoubleValue sensorLatitude = 6;   // The latitude of the engaging device.
+  google.protobuf.DoubleValue sensorLongitude = 7;  // The longitude of the engaging device.
+  google.protobuf.DoubleValue sensorAltitude = 8;   // The altitude of the engaging device.
+  google.protobuf.Int32Value sourceThreatId = 9;    // Medusa id of the threat being engaged.
+  google.protobuf.Int32Value sourceTrackId = 10;    // Medusa track Id being engaged.
+  google.protobuf.DoubleValue latitude = 11;        // The latitude of the 3d threat.
+  google.protobuf.DoubleValue longitude = 12;       // The longitude of the 3d threat.
+  google.protobuf.DoubleValue altitude = 13;        // The altitude of the 3d threat.
+  google.protobuf.DoubleValue azimuth = 14;         // The azimuth of the 2d threat.
+  google.protobuf.DoubleValue elevation = 15;       // The elevation of the 2d threat.
+  TargetAffiliation affiliation = 16;               // The affiliation of the threat.
+  google.protobuf.StringValue countermeasures = 17; // The countermeasures available.
+  google.protobuf.Int32Value priority = 18;         // The priority of the threat.
+  google.protobuf.StringValue droneModel = 19;      // The model of the detected drone.
+  google.protobuf.StringValue frequency = 20;       // The frequency of the detected drone.
+  google.protobuf.StringValue signalType = 21;      // The signal type of the detected drone.
+  google.protobuf.StringValue macAddress = 22;      // The mac address of the detected drone.
+  google.protobuf.DoubleValue velocity = 23;        // The speed of the threat in m/s.
+}
+
+//
+// StartTimeThreatIdRequest
+// The request for the calls requiring a start time and a Medusa threat id.
+//
+message StartTimeThreatIdRequest {
+  int64 startTime = 1;  // The start time for the queries.
+  int32 threatId = 2;   // The Medusa threat Id to use for the call.
+}
+
+//
+// StartTimeEndTimeRequest
+// The request for the calls requiring a start time and an end time.
+//
+message StartTimeEndTimeRequest {
+  int64 startTime = 1; // The start of the time span we wish to query
+  int64 endTime = 2;   // The end of the time span we wish to query
+}
+
+//
+// ThreatDbIdRequest
+// The request for the calls requiring a threat database id.
+//
+message ThreatDbIdRequest {
+  int32 threatDbId = 1; // The unique database threat Id to use for the call.
+}
+
+//
+// ThreatReportInfo
+// All of the information from the join of the Threats and ThreatSnapshots tables
+//
+message ThreatReportInfo {
+  bool success = 1;                                  // If the request succeeded or not.
+  int32 threatDbId = 2;                             // Database Id from the Threats table.
+  int32 sourceThreatId = 3;                          // Medusa threat id associated with the threatDbId.
+  string sourceSystem = 4;                           // The system (correlator) this threat came from such as MAS, etc.
+  string sourceServer = 5;                           // The physical server (computer name) reporting this threat.
+  int64 lastTimeUpdated = 6;                         // The timestamp for when the row was last updated.
+  bool isComplete = 7;                               // Indicates if the threat is complete, formally ended.
+  int32 threatSnapshotDbId = 8;                      // Database Id from the ThreatSnapshots table.
+  int64 snapshotTime = 9;                            // Milliseconds since 1970.
+  int64 timeReceived = 10;                           // Microseconds since 1970, actual time track was received.
+  bool isBegin = 11;                                 // This is the first snapshot for this threat if true.
+  bool isEnd = 12;                                   // This threat snapshot has ended if true.
+  google.protobuf.BoolValue isImminent = 13;         // This threat has entered a protected area if true (optional).
+  bool isNinjaThreat = 14;                           // This threat comes from a Ninja if true.
+  google.protobuf.StringValue ninjaGroup = 15;       // If a Ninja threat, this denotes the group (optional).
+  google.protobuf.Int32Value initialPriority = 16;   // The initial MAS priority of the threat (optional).
+  google.protobuf.Int32Value processedPriority = 17; // The TPM priority of the threat (optional).
+  string childTracks = 18;                           // The child tracks of the threat [trackNum/source], ex [3/CTC,2/Duke].
+  CoordinateLla position3d = 19;                     // Lat/lon/Alt for a 3d threat.
+  CoordinatePolar position2d = 20;                   // Azimuth/Elevation For a 2d threat.
+  int32 dimension = 21;                              // The dimensionality of this threat.
+  TargetAffiliation affiliation = 22;                // The affiliation of the threat as per CommonProto TargetAffiliation.
+}
+
+//
+// StartTimeTrackIdRequest
+// The request for the calls requiring a start time and a Medusa track id.
+//
+message StartTimeTrackIdRequest {
+  int64 startTime = 1;  // The start time for the queries.
+  int32 trackId = 2;    // The Medusa track Id to use for the call.
+}
+
+//
+// TrackDbIdRequest
+// The request for the calls requiring a track database id.
+//
+message TrackDbIdRequest {
+  int32 trackDbId = 1; // The unique database track Id to use for the call.
+}
+
+//
+// TrackReportInfo
+// All of the information from the join of the Tracks and TrackSnapshots tables
+//
+message TrackReportInfo {
+  bool success = 1;                                  // If the request succeeded.
+  int32 trackDbId = 2;                               // Database Id from the Tracks table.
+  int32 sourceTrackId = 3;                           // Medusa track id associated with the trackDbId.
+  string sourceSystem = 4;                           // The system (correlator) this track came from such as MAS, etc.
+  string sourceServer = 5;                           // The physical server (computer name) reporting this track.
+  string sourceTrackType = 6;                        // The track type (acoustic/rf/radar..)
+  int64 lastTimeUpdated = 7;                         // The timestamp for when the row was last updated.
+  bool isComplete = 8;                               // Indicates if the track is complete, formally ended.
+  int32 trackSnapshotDbId = 9;                       // Database Id from the TrackSnapshots table.
+  int64 snapshotTime = 10;                           // Milliseconds since 1970.
+  int64 timeReceived = 11;                           // Microseconds since 1970, actual time track was received.
+  TargetAffiliation affiliation = 12;                // The affiliation of the track as per CommonProto TargetAffiliation.
+  string classType = 13;                             // The class type of the track, Aircraft, Bird, UAS, etc.
+  google.protobuf.StringValue signalType = 14;       // The signal type of the track, Radar, Acoustic, EW, etc.
+  google.protobuf.DoubleValue frequency = 15;        // The frequency of the track.
+  google.protobuf.DoubleValue signalConfidence = 16; // A measure of the signal confidence for the track.
+  google.protobuf.Int32Value groupId = 17;           // The group id for which the track is associated.
+  CoordinateLla position3d = 18;                     // Lat/lon/Alt for a 3d track.
+  Orientation position2d = 19;                       // Azimuth/Elevation For a 2d track.
+  Vector3 velocity = 20;                             // Track velocity in meters/second in X/Y/Z.
+  bool isEndTrack = 21;                              // Is this the end of the track? Yes if equal to true.
+  google.protobuf.StringValue droneModel = 22;       // The drone model of the detected track (optional).
+  google.protobuf.StringValue countermeasures = 23;  // The available countermeasures and their states (optional).
+  google.protobuf.StringValue macAddress = 24;       // The mac address of the detected track (optional).
+}
+
+//
+// DeviceStatusInfo
+// The information recorded for the status of a device.
+//
+message DeviceStatusInfo {
+  bool success = 1;                         // If the request succeeded.
+  int32 deviceStatusDbId = 2;               // Database Id from the DeviceStatus table.
+  int64 statusTime = 3;                     // Time the status was recorded, milliseconds since 1970.
+  string deviceId = 4;                      // The device whose status is recorded.
+  string deviceOperationalStatus = 5;       // The status of the device.
+  google.protobuf.StringValue warnings = 6; // Any warning messages currently given for the device.
+}
+
+//
+// ClassificationInfo
+// The classification level of the configuration.
+//
+message ClassificationInfo {
+  bool success = 1;                                    // If the request succeeded.
+  google.protobuf.StringValue classificationLevel = 2; // The classification level from the configuration file.
+}

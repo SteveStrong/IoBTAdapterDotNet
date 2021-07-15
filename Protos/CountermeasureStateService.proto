@@ -1,0 +1,91 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "GrpcGreeter";
+
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Protos/Common.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "CountermeasureStateServiceProto";
+
+//
+// CountermeasureStateService
+// Service used to publish the countering state of the system
+//
+service CountermeasureStateService {
+
+  //
+  // getVersion
+  // Get the version of the CountermeasureStateService. this is a unary blocking call.
+  //
+  rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+  //
+  // subscribe
+  // Allows the client to receive the countering state of the system.
+  //
+  rpc subscribe (google.protobuf.Empty) returns (stream CountermeasureStateInfo);
+
+  //
+  // getCounterState
+  // Allows the client to receive the current countering status of the system.
+  //
+  rpc getCounterState (google.protobuf.Empty) returns (CountermeasureStateInfo);
+}
+
+//
+// CountermeasureStateInfo
+// Message used to send the Counter state to subscribers
+//
+message CountermeasureStateInfo {
+  // The overall countering status of the system.
+  // Overall status is the highest priority counter state of all devices.
+  // Priority order: Unknown < Inactive < Pending < Active
+  CounterStatusType systemStatus = 1;
+  google.protobuf.Int64Value counterStartTime = 2; // Timestamp in milliseconds since epoch when the system started countering
+  google.protobuf.Int64Value counterDuration = 3; // Duration in seconds since the system started countering
+  repeated DeviceCounterState devices = 4; // list of devices capable of countering and their states
+}
+
+//
+// CounterStatusType
+// The countering state.
+//
+enum CounterStatusType {
+  COUNTER_STATUS_UNKNOWN = 0;
+  COUNTER_STATUS_INACTIVE = 1;
+  COUNTER_STATUS_PENDING = 2;
+  COUNTER_STATUS_ACTIVE = 3;
+}
+
+//
+// DeviceCounterState
+// the countering state of a specific device.
+//
+message DeviceCounterState {
+  string deviceId = 1; // The ID of this device
+  CounterStatusType deviceStatus = 2; // The countering state of this device
+  google.protobuf.Int64Value counterStartTime = 3; // Timestamp in milliseconds since epoch when the device started countering
+  google.protobuf.Int64Value counterDuration = 4; // Duration in seconds since the device started countering
+}

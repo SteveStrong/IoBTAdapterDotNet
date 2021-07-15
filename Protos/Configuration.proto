@@ -1,0 +1,101 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "GrpcGreeter";
+
+
+import "Protos/Common.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "ConfigurationProto";
+
+//
+// ProtectedAreaShapeType
+// Enumerated set of values representing the shape of a protected area
+//
+enum ProtectedAreaShapeType {
+  PA_SHAPE_UNKNOWN = 0;
+  PA_SHAPE_POLYGON = 1;
+  PA_SHAPE_CIRCLE = 2;
+}
+
+//
+// ProtectedAreaType
+// Enumerated set of values representing a specific type for this protected area
+//
+enum ProtectedAreaType {
+  PA_TYPE_UNKNOWN = 0;
+  PA_TYPE_PROTECTED_AREA = 1;
+  PA_TYPE_KEEP_OUT_ZONE = 2;
+  PA_TYPE_RULES_OF_ENGAGEMENT = 3;
+}
+
+//
+// ProtectedAreaInfo
+// Details about one defined protected area within the system
+//
+message ProtectedAreaInfo {
+  string name = 1; // unique identifier for this protected area
+  ProtectedAreaType type = 2; // specific type
+  ProtectedAreaShapeType shape = 3; // shape type
+  int64 fillColor = 4; // display fill color aarrggbb
+  int64 borderColor = 5; // display border color aarrggbb
+  bool useAltitude = 6; // if we should use altitude values in provided coordinates
+
+  bool displayWarningArea = 7; // whether the outer warning boundary should be displayed
+  int32 warningTime = 8; // this defines a buffer (in number of seconds) between a threat and this protected area
+  repeated ProtectedAreaWarningAreaInfo warningAreas = 9; // internal boundaries at which to augment alerting
+
+  oneof data {
+    ProtectedAreaCircleInfo circle = 10;
+    ProtectedAreaPolygonInfo polygon = 11;
+  }
+
+}
+
+//
+// ProtectedAreaWarningAreaInfo
+// This is an area inside of a protected area that provides further alerting as a threat goes deeper into that protected
+// area. I think. This is umm interesting.
+//
+message ProtectedAreaWarningAreaInfo {
+  string name = 1; // name for this warning area
+  double offset = 2; // the offset from the perimeter of the protected area for this internal extra warning
+  int64 fillColor = 4; // display fill color aarrggbb
+  int64 borderColor = 5; // display border color aarrggbb
+}
+
+//
+// ProtectedAreaCircleInfo
+// Details about the shape for a circular protected area
+//
+message ProtectedAreaCircleInfo {
+  CoordinateLla center = 1; // center point for this circle
+  double radius = 2; // radius of the circle in meters
+}
+
+//
+// ProtectedAreaPolygonInfo
+// Details about the shape for a polygonal protected area
+//
+message ProtectedAreaPolygonInfo {
+  repeated CoordinateLla points = 1; // the points making up this polygon
+}

@@ -16,17 +16,17 @@ using IoBTAdapterDotNet.Models;
 
 namespace IoBTAdapterDotNet.Hubs
 {
-    public interface IAdapterHub
+    public interface IMedusaHub
     {
         Task<string> Ping(string payload);
 
         Task<UDTO_Command> Command(UDTO_Command payload);
     }
-    public class AdapterHub : Hub, IAdapterHub
+    public class MedusaHub : Hub, IMedusaHub
     {
 
 
-        public AdapterHub()
+        public MedusaHub()
         {
         }
 
@@ -55,6 +55,15 @@ namespace IoBTAdapterDotNet.Hubs
 
             await Clients.All.SendAsync(msg, payload);
             return payload;
+        }
+
+        public async Task<UDTO_Command> Slew()
+        {
+            var msg = "Command";
+            var slew = new UDTO_Command();
+
+            await Clients.All.SendAsync(msg, slew);
+            return slew;
         }
     }
 }

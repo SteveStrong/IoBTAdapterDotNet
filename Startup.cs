@@ -83,6 +83,7 @@ namespace IoBTAdapterDotNet
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHub<AdapterHub>("/adapterHub");
+                endpoints.MapHub<MedusaHub>("/medusaHub");
                 endpoints.MapControllers();
             });
         }

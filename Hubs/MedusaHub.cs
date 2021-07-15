@@ -51,17 +51,21 @@ namespace IoBTAdapterDotNet.Hubs
         }
 
 
-        // public async Task<UDTO_Command> Command(UDTO_Command payload)
-        // {
-        //     var msg = "Command";
+        public async Task<UDTO_Command> Command(UDTO_Command payload)
+        {
+            var msg = "Command";
 
-        //     await Clients.All.SendAsync(msg, payload);
-        //     return payload;
-        // }
+            if ( payload.command == "SLEW") {
+                await this.Slew(payload);
+                return payload;
+            }
+
+            await Clients.All.SendAsync(msg, payload);
+            return payload;
+        }
 
         public async Task<UDTO_Command> Slew(UDTO_Command payload)
         {
-
             if ( payload.command != "SLEW") {
                 await Clients.All.SendAsync("ERROR", payload);
             }
@@ -71,9 +75,6 @@ namespace IoBTAdapterDotNet.Hubs
 
             // share with Squire clients
             var msg = "Command";
- 
-
-
             await Clients.All.SendAsync(msg, payload);
             return payload;
         }

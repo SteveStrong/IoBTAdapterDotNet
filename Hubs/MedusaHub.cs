@@ -25,9 +25,11 @@ namespace IoBTAdapterDotNet.Hubs
     public class MedusaHub : Hub, IMedusaHub
     {
 
+       private readonly IMedusaEntity medusaEntity;
 
-        public MedusaHub()
+        public MedusaHub(IMedusaEntity medusaEntity)
         {
+             this.medusaEntity = medusaEntity;
         }
 
 
@@ -49,21 +51,31 @@ namespace IoBTAdapterDotNet.Hubs
         }
 
 
-        public async Task<UDTO_Command> Command(UDTO_Command payload)
+        // public async Task<UDTO_Command> Command(UDTO_Command payload)
+        // {
+        //     var msg = "Command";
+
+        //     await Clients.All.SendAsync(msg, payload);
+        //     return payload;
+        // }
+
+        public async Task<UDTO_Command> Slew(UDTO_Command payload)
         {
+
+            if ( payload.command != "SLEW") {
+                await Clients.All.SendAsync("ERROR", payload);
+            }
+
+            //broadcast a command to medusa
+            this.medusaEntity.Slew();
+
+            // share with Squire clients
             var msg = "Command";
+ 
+
 
             await Clients.All.SendAsync(msg, payload);
             return payload;
-        }
-
-        public async Task<UDTO_Command> Slew()
-        {
-            var msg = "Command";
-            var slew = new UDTO_Command();
-
-            await Clients.All.SendAsync(msg, slew);
-            return slew;
         }
     }
 }

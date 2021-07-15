@@ -21,27 +21,7 @@ namespace IoBTAdapterDotNet.Controllers
         [HttpGet]
         public ActionResult getDefault()
         {
-            return Redirect("/theater/index.html");
-            //return Redirect("/cop/index.html");
-            //return Redirect("/swagger/index.html");
-        }
-
-        [HttpGet("cop")]
-        public ActionResult COP()
-        {
-            return Redirect("/cop/index.html");
-        }
-
-        [HttpGet("theater")]
-        public ActionResult Theater()
-        {
-            return Redirect("/theater/index.html");
-        }
-
-        [HttpGet("IoBTClient")]
-        public ActionResult IoBTClient()
-        {
-            return Redirect("/IoBTClient/index.html");
+            return Redirect("/swagger/index.html");
         }
 
         [HttpGet("swagger")]

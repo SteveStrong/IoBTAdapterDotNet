@@ -12,6 +12,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
+using IoBTAdapterDotNet.Hubs;
+using IoBTAdapterDotNet.Models;
+
 namespace IoBTAdapterDotNet
 {
     public class Startup
@@ -26,8 +29,29 @@ namespace IoBTAdapterDotNet
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
             services.AddControllers();
+
+            //https://docs.microsoft.com/en-us/aspnet/core/signalr/configuration?view=aspnetcore-5.0&tabs=dotnet#configure-server-options
+            services.AddSignalR(hubOptions =>
+            {
+                hubOptions.ClientTimeoutInterval = TimeSpan.FromMinutes(38);
+                hubOptions.EnableDetailedErrors = true;
+            }).AddMessagePackProtocol();
+
+
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(builder =>
+                {
+                    builder
+                        // .WithOrigins(new[] { "http://localhost:8080", "http://localhost:8081" })
+                        .AllowCredentials()
+                        .AllowAnyHeader()
+                        .SetIsOriginAllowed(_ => true)
+                        .AllowAnyMethod();
+                });
+            });
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "IoBTAdapterDotNet", Version = "v1" });
@@ -40,18 +64,25 @@ namespace IoBTAdapterDotNet
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "IoBTAdapterDotNet v1"));
             }
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "IoBTAdapterDotNet v1"));
 
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseCors();
 
             app.UseAuthorization();
+            app.UseAuthentication();
+
+            app.UseStaticFiles();
+            app.UseDefaultFiles();
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHub<AdapterHub>("/adapterHub");
                 endpoints.MapControllers();
             });
         }

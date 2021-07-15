@@ -1,6 +1,6 @@
 using System;
 
-namespace IoBTAdapterDotNet
+namespace IoBTAdapterDotNet.Models
 {
     public class WeatherForecast
     {

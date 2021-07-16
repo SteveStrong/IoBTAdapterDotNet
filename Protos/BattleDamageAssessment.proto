@@ -1,5 +1,5 @@
 syntax = "proto3";
-option csharp_namespace = MedusaAdapter;
+option csharp_namespace = "MedusaAdapter";
 
 
 import "google/protobuf/wrappers.proto";

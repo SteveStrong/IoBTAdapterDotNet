@@ -17,7 +17,7 @@
 | Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
 --------------------------------------------------------------------------------------------------*/
 syntax = "proto3";
-option csharp_namespace = "GrpcGreeter";
+option csharp_namespace = MedusaAdapter;
 
 
 import "google/protobuf/wrappers.proto";

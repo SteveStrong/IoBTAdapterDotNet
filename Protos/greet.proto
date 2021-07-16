@@ -1,5 +1,5 @@
 syntax = "proto3";
-option csharp_namespace = "GrpcGreeter";
+option csharp_namespace = MedusaAdapter;
 package mil.airforce.mc2.sdk.generated;
 
 // The greeting service definition.

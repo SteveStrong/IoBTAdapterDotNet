@@ -1,5 +1,5 @@
 syntax = "proto3";
-option csharp_namespace = "GrpcGreeter";
+option csharp_namespace = MedusaAdapter;
 
 
 import "google/protobuf/wrappers.proto";

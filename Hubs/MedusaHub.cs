@@ -71,7 +71,7 @@ namespace IoBTAdapterDotNet.Hubs
             }
 
             //broadcast a command to medusa
-            this.medusaEntity.Slew();
+            var result = await this.medusaEntity.Slew();
 
             // share with Squire clients
             var msg = "Command";

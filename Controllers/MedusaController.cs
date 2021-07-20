@@ -84,6 +84,9 @@ namespace IoBTAdapterDotNet.Controllers
                     return BadRequest(error);
                 }
  
+                //broadcast a command to medusa
+                //var result = await this.medusaEntity.Slew();
+
                 await this.medusaHub.Clients.All.SendAsync("Slew", payload);
                 var wrap = new ContextWrapper<UDTO_Command>(payload);
                 return Ok(wrap);

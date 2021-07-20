@@ -23,8 +23,8 @@ option csharp_namespace = "MedusaAdapter";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/descriptor.proto";
 
-package mil.airforce.mc2.sdk.generated;
-option java_package = "mil.airforce.mc2.sdk.generated";
+package medusa.generated;
+option java_package = "medusa.generated";
 option java_outer_classname = "CommonProto";
 
 //

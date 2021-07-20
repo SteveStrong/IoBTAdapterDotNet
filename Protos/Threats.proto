@@ -26,8 +26,8 @@ import "google/protobuf/wrappers.proto";
 import "google/protobuf/descriptor.proto";
 import "Protos/Common.proto";
 
-package mil.airforce.mc2.sdk.generated;
-option java_package = "mil.airforce.mc2.sdk.generated";
+package medusa.generated;
+option java_package = "medusa.generated";
 option java_outer_classname = "ThreatsProto";
 
 //

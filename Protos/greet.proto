@@ -1,6 +1,6 @@
 syntax = "proto3";
 option csharp_namespace = "MedusaAdapter";
-package mil.airforce.mc2.sdk.generated;
+package medusa.generated;
 
 // The greeting service definition.
 service CompleteGreeter {

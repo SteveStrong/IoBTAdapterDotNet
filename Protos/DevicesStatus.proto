@@ -25,8 +25,8 @@ import "Protos/Common.proto";
 import "Protos/SystemConfiguration.proto";
 import "google/protobuf/wrappers.proto";
 
-package mil.airforce.mc2.sdk.generated;
-option java_package = "mil.airforce.mc2.sdk.generated";
+package medusa.generated;
+option java_package = "medusa.generated";
 option java_outer_classname = "DevicesStatusProto";
 
 

@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "Common.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "BattleDamageAssessmentProto";
+
+//
+// Battle Damage Assessment is to provide a quantitative assessment of physical damage (i.e., percentage
+// damaged) to a target element resulting from the application of fires. Base this assessment on observed, interpreted,
+// or estimated damage resulting from the coupling of capability effects to target vulnerabilities. Lethal and
+// non-lethal capabilities may cause physical damage. Effects resulting in physical damage are usually immediate and
+// easily recognizable.
+//
+message BattleDamageAssessment{
+  int64 timeOfAssessment = 1;  // The initial time of assessment. Milliseconds since epoch.
+  int64 timeOfEngagement = 2;  // The initial time of engagement. Milliseconds since epoch
+  string assessmentReportAuthor = 3;  // The String value of the entity making the report.
+  string effectorUuid = 4;  // The UUID of the effector who performed the damage/change. This is also can be the device ID of the effector
+  EffectorType effectorType = 5; // The effector type that caused the damage/change.
+  google.protobuf.StringValue threatUuid = 6; // The UUID of the threat being targeted. Not sure we can represent threat as a UUID in the near term.
+  EntityClassificationType entityClassificationType = 7;  // An enum used to classify the entity being targeted.
+  ConfidenceCode entityClassificationConfidence = 8;  // The level of confidence to the entity classification.
+  string verificationSource = 9;  // The data source used to verify the physical damage/change assessment.
+  BdaDamageLevel bdaDamageLevel = 10;  // The level of damage on a target.
+  ConfidenceCode damageOnTargetConfidence = 11; // The confidence code on the level on damage done to the target.
+  CollateralDamageType collateralDamageType = 12; // Were there any collateral damage?
+  mil.airforce.mc2.sdk.generated.CoordinateLla position = 13;  // The position of the target being damaged assessed.
+}
+
+enum EffectorType {
+    EFFECTOR_TYPE_UNKNOWN = 0;
+    EFFECTOR_TYPE_KINETIC_BALLISTIC = 1;
+    EFFECTOR_TYPE_KINETIC_GUIDED = 2;
+    EFFECTOR_TYPE_KINETIC_AIR_DROPPED = 3;
+    EFFECTOR_TYPE_RF_JAMMING = 4;
+    EFFECTOR_TYPE_RF_MONITORING = 5;
+    EFFECTOR_TYPE_RF_SUBVERSION = 6;
+    EFFECTOR_TYPE_ENERGY_LASER = 7;
+}
+
+//
+// A classification list of entities on the battlefield
+//
+enum EntityClassificationType{
+  ENTITY_CLASS_TYPE_UNKNOWN = 0;
+  ENTITY_CLASS_TYPE_WHEELED = 1;
+  ENTITY_CLASS_TYPE_TRACKED = 2;
+  ENTITY_CLASS_TYPE_HELICOPTER = 3;
+  ENTITY_CLASS_TYPE_UAV = 4;
+  ENTITY_CLASS_TYPE_TRAIN = 5;
+  ENTITY_CLASS_TYPE_AIRCRAFT = 6;
+  ENTITY_CLASS_TYPE_AIRCRAFT_STRIKE = 7;
+  ENTITY_CLASS_TYPE_AIRCRAFT_TRANSPORT = 8;
+  ENTITY_CLASS_TYPE_AIRCRAFT_COMMERCIAL = 9;
+  ENTITY_CLASS_TYPE_WATERCRAFT = 10;
+  ENTITY_CLASS_TYPE_WATERCRAFT_GO_FAST = 11;
+  ENTITY_CLASS_TYPE_WATERCRAFT_PLEASURE = 12;
+  ENTITY_CLASS_TYPE_WATERCRAFT_NAVAL = 13;
+  ENTITY_CLASS_TYPE_WATERCRAFT_CARGO = 14;
+  ENTITY_CLASS_TYPE_CAR = 15;
+  ENTITY_CLASS_TYPE_TRUCK_PICKUP = 16;
+  ENTITY_CLASS_TYPE_TRUCK_TRACTOR_TRAILER = 17;
+  ENTITY_CLASS_TYPE_TRUCK_HUMVEE = 18;
+  ENTITY_CLASS_TYPE_EMERGENCY_VEHICLE = 19;
+  ENTITY_CLASS_TYPE_DISMOUNT = 20;
+  ENTITY_CLASS_TYPE_DISMOUNT_COMBATANT = 21;
+  ENTITY_CLASS_TYPE_DISMOUNT_NON_COMBATANT = 22;
+  ENTITY_CLASS_TYPE_DISMOUNT_MALE = 23;
+  ENTITY_CLASS_TYPE_DISMOUNT_FEMALE = 24;
+  ENTITY_CLASS_TYPE_DISMOUNT_GROUP = 25;
+
+}
+
+//
+// The level of confidence
+//
+enum ConfidenceCode{
+  CONFIDENCE_UNKNOWN = 0;
+  CONFIDENCE_VERY_LOW = 1;
+  CONFIDENCE_LOW = 2;
+  CONFIDENCE_MEDIUM = 3;
+  CONFIDENCE_HIGH = 4;
+  CONFIDENCE_VERY_HIGH = 5;
+}
+
+//
+// The level of damage done
+//
+enum BdaDamageLevel{
+  DAMAGE_LEVEL_UNKNOWN = 0;
+  DAMAGE_LEVEL_NO_DAMAGE = 1;
+  DAMAGE_LEVEL_DAMAGED = 2;
+  DAMAGE_LEVEL_DESTROYED = 3;
+}
+
+//
+// Were there any collateral damage during the mission?
+//
+enum CollateralDamageType{
+  COLLATERAL_DAMAGE_UNKNOWN = 0;
+  COLLATERAL_DAMAGE_NONE = 1;
+  COLLATERAL_DAMAGE_UNINTENTIONAL = 2;
+  COLLATERAL_DAMAGE_INCIDENTAL = 3;
+}

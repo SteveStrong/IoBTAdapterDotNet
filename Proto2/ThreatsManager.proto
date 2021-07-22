@@ -1,0 +1,190 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "Common.proto";
+import "Threats.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "ThreatsManagerProto";
+
+//
+// ThreatsManager
+// The threats manager service provides public calls into the MEDUSA system for
+// threat-related actions. The client can subscribe to threats as
+// they occur. This interface also supports addition of threats into the system.
+//
+service ThreatsManager {
+
+	//
+	// getVersion
+	// Get the version of the threats manager.
+	// Input parameters: none
+	// Output: VersionInfo proto class, containing version details
+	//
+
+	rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+	//
+	// subscribe
+	// Subscribe to either threats from the medusa correlation application or affiliations changes.
+	// stream without a definitive end to the set. The client will continue to receive
+	// ThreatsManagerSubscription objects until the request is made to stop or the server is shut down.
+	// Input: Details about the subscription for this client
+	// Output: The stream through which the changes will be received by the client as they
+	// occur within the MEDUSA system.
+	//
+	rpc subscribe (ThreatsManagerSubscription) returns (stream ThreatsManagerSubscriptionResponse);
+
+
+	//
+	// cancelSubscription
+	// This calls cancels / turns off the stream being sent via subscribe.
+	// Input: None
+	// Output: A standard response class with success/failure information
+	//
+	rpc cancelSubscription (google.protobuf.Empty) returns (ResponseInfo);
+
+	//
+	// addThreat
+	// Ability to add a complete threat into the DON system. This will bypass the
+	// MEDUSA correlator, and will instead act as if it came from the correlator
+	// and into our threat prioritization process.
+	// Input: The threat definition to include into the MEDUSA system
+	// Output: A standard response class with success/failure information
+	//
+	rpc addThreat (ThreatInfo) returns (ResponseInfo);
+
+	//
+	// setAffiliation
+	// Ability to overwrite the Affiliation of a threat that already exists in the
+	// DON system. Should behave the same as if the HMI operator made an affiliation
+	// change.
+	// Input: The client threat affiliation definition
+	// Output: A standard response class with success/failure information
+	//
+	rpc setAffiliation (ThreatAffiliationInfo) returns (ResponseInfo);
+
+	//
+	// getAffiliations
+	// Ability to request affiliations changes.
+	//
+	// Input: None
+	// Output: A stream of ThreatAffiliationInfo objects containing the threat IDs and associated
+	// affiliations
+	//
+	rpc getAffiliations (google.protobuf.Empty) returns (stream ThreatAffiliationInfo);
+
+}
+
+//
+// ThreatsManagerSubscription
+// The ThreatsManager subscription.
+// Allows the client to choose what to subscribe to from the ThreatsManager.
+//
+message ThreatsManagerSubscription {
+  bool subscribeToAffiliations = 1;
+  bool subscribeToThreats = 2;
+  bool subscribeToThreatTimeouts = 3;
+  repeated ClientThreatFilter filters = 4;
+}
+
+//
+// ThreatsManagerResponseType
+// Enum for determining the type of response the client has received
+//
+enum ThreatsManagerResponseType {
+  THREATS_MANAGER_RESPONSE_UNKNOWN = 0;
+  THREATS_MANAGER_RESPONSE_THREATS = 1;
+  THREATS_MANAGER_RESPONSE_AFFILIATIONS = 2;
+}
+
+//
+// ThreatsManagerSubscriptionResponse
+// The response to expect when subscribed to ThreatsManager.
+// Can contain the entire set of threats, or a set of affiliations changes.
+//
+message ThreatsManagerSubscriptionResponse {
+  ThreatsManagerResponseType type = 1;
+  ThreatSubscriptionResponse threatResponse = 2;
+  ThreatAffiliationResponse affiliationResponse = 3;
+}
+
+//
+// ThreatAffiliationResponse
+// The response for affiliation change subscriptions
+//
+message ThreatAffiliationResponse {
+  //the affiliation info
+  ThreatAffiliationInfo affiliationInfo = 1;
+  //whether the threat has timed out
+  bool hasTimedOut = 2;
+}
+
+//
+// ThreatAffiliationInfo
+// Ability to get/set the affiliation level for a threat given its ID.
+//
+message ThreatAffiliationInfo {
+  //the ID of the threat to affiliate
+  int64 threatId = 1;
+  //the affiliation client would like to set the threat to.
+  TargetAffiliation affiliation = 2;
+}
+
+//
+//  ClientThreatFilter
+//  Details for filtering out threat that this client would receive via a subscription.
+//
+message ClientThreatFilter {
+	ClientThreatsFilterType filterType = 1;
+	//inclusive is true is the client would like to filter out threats outside of these bounds
+	//inclusive is false if the client would like to filter out threats inside of these bounds.
+	bool inclusive = 2;
+	oneof data {
+		//the priority threshold the client would like to filter
+		int32 priority = 3;
+		//the affiliation client would like to filter
+		TargetAffiliation affiliation = 4;
+		//the area threshold client would like to filter
+		ThreatsFilterAreaDetails area = 5;
+		//the source the client would like to filter
+		string source = 6;
+	}
+}
+
+enum ClientThreatsFilterType {
+	FILTER_BY_PRIORITY = 0;
+	FILTER_BY_AFFILIATION = 1;
+	FILTER_BY_AREA = 2;
+	FILTER_BY_SOURCE = 3;
+}
+
+message ThreatsFilterAreaDetails {
+	//unimplemented
+}
+
+//
+// ThreatResponseType
+// When a client receives a ThreatSubscriptionResponse, it will be either a threat or a track.
+// This tells us which of these things it is.
+//
+enum ThreatResponseType {
+	ThreatResponse = 0;
+	TrackResponse  = 1;
+}
+
+//
+// ThreatSubscriptionResponse
+// wrapper around a threats manager response. Based on client subscription it could be
+// a track or a threat
+//
+message ThreatSubscriptionResponse {
+	ThreatResponseType type = 1;
+	oneof data {
+		ThreatInfo threatInfo = 2;
+		TrackInfo trackInfo = 3;
+	}
+}
+
+

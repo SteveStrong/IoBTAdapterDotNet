@@ -1,0 +1,97 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Common.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "SystemAlertsProto";
+
+
+
+//
+// SystemAlertPriority enumeration
+// The importance level for this alert. Helps determine display.
+//
+enum SystemAlertPriority {
+  ALERT_PRIORITY_LOW = 0;
+  ALERT_PRIORITY_MEDIUM = 1;
+  ALERT_PRIORITY_HIGH = 2;
+  ALERT_PRIORITY_CRITICAL = 3;
+}
+
+//
+// SystemAlertType enumeration
+// The specific kind of alert this represents
+//
+enum SystemAlertType
+{
+  ALERT_UNKNOWN = 0; // unknown/default value
+  ALERT_DEVICE_STATUS_CHANGE = 1; // A server-side device changed its status.
+  ALERT_SERVICE_STATUS_CHANGE = 2; // A service has changed its status.
+  ALERT_CLIENT_STATUS_CHANGE = 3; // An HMI client experienced changed status.
+  ALERT_DEVICE_WARNING_CHANGE = 4; // The set of warnings on a device has changed
+}
+
+//
+// SystemAlertInfo
+// Alerts are used to indicate important changes in the system and are used as a mechanism to broadcast
+// important messages to the operator.
+//
+message SystemAlert {
+  int64 timestamp = 1; // alert creation timestamp (milliseconds since epoch)
+  SystemAlertType type = 2; // Type to indicate what this alert is for.
+
+  // the service, device, or HMI id that the alert is for.
+  // If the FC goes offline (for example), this ID should be FireController.
+  // For a device alert, this would be the device id.
+  string sourceId = 3;
+  SystemAlertPriority priority = 4; // Priority indicates how in-your-face this alert will be to the operator.
+
+  string title = 5; // A title to display on the client for this alert.
+  string description = 6; // A description to display on a client this alert.
+
+  // details for change in status (if applicable)
+  SystemAlertStatusChanges status = 7;
+
+  oneof details {
+    ClientStatusChangeDetails client = 8; // Fields specific to type = ALERT_CLIENT_STATUS_CHANGE
+  }
+}
+
+//
+// SystemAlertStatusChanges
+// If a system alert involves a change in status for a device/service/client, this message
+// details that change in operational status. optional.
+message SystemAlertStatusChanges {
+  OperationalStatus previousStatus = 1; // previous state for source item
+  OperationalStatus newStatus = 2; // current state for this source item
+}
+
+//
+// ClientStatusChangeDetails
+// Provides fields specific to type = ALERT_CLIENT_STATUS_CHANGE when a client (hmi) connects or disconnects.
+//
+message ClientStatusChangeDetails {
+  int32 clientCount = 1; // number of active clients. can trigger auto-responses if count gets to 0
+}

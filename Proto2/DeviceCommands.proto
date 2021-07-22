@@ -1,0 +1,503 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+import "Common.proto";
+import "google/protobuf/wrappers.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "DeviceCommandsProto";
+
+//
+// DeviceCommandType
+// enumeration of available device commands that can be sent through the system
+// NOTE: Not number compatible with DON
+//
+enum DeviceCommandType {
+  DEVCMD_UNKNOWN = 0;
+
+  DEVCMD_AFFILIATE = 1; // a broadcast command associated with a target not a device
+
+  DEVCMD_DEPLOY = 2;
+  DEVCMD_ENERGIZE = 3;
+  DEVCMD_PROBE = 4;
+  DEVCMD_FIRE = 5;
+
+  DEVCMD_SLEW = 6;
+  DEVCMD_NUDGE = 7;
+
+  DEVCMD_CAMERA_FOCUS = 9;
+  DEVCMD_CAMERA_ZOOM = 10;
+  DEVCMD_CAMERA_NUC = 11;
+  DEVCMD_CAMERA_RECORD = 12;
+
+  DEVCMD_COUNTERMEASURE = 13;
+  DEVCMD_DEFAULT_COUNTERMEASURE = 14;
+  DEVCMD_UPDATE_TARGET = 15;
+
+  DEVCMD_CONFIG_NORTHING = 16;
+  DEVCMD_END_MISSION= 17; // a broadcast end-active-mission command
+}
+
+//
+// DeviceCommandInfo
+// Details about one command sent through the system. This could be a command
+// sent from an SDK client or it could be a command being sent to a client-handled
+// device. The expected response to a command is to send back a DeviceCommandResponse.
+//
+message DeviceCommandInfo {
+  DeviceCommandType type = 1; // command type
+  int64 timestamp = 2; // (milliseconds since epoch)
+  string deviceId = 3; // device being commanded / destination
+  string commandSource = 4; // source system initiating this command
+  string component = 5; // support for child/sub-component/sub-sensor to receive the command
+  bool isBroadcast = 6; // a broadcast command goes to all providers, not to a specific device
+
+  // a required unique identifier for this command. will be returned within the response to the command to identify
+  // which command is being responded to. NOTE that the creator of this command message is responsible for
+  // setting this value to something that would allow for proper id within the received response.
+  string commandId = 7;
+
+  oneof data {
+
+    // DeviceCommandType.DEVCMD_AFFILIATE command type
+    // Notifies the system that a target was verified externally. The proper response to an affiliation command
+    // is a generic success message.
+    AffiliateCommandInfo affiliate = 8;
+
+    // DeviceCommandType.DEVCMD_DEPLOY command type
+    // A carte blanche command for a system to perform its primary function. Response to this command is implementation
+    // defined by each system, but must be at least the generic success message.
+    ActionCommandInfo deploy = 9;
+
+    // DeviceCommandType.DEVCMD_ENERGIZE command type
+    // A call for fire from an energy weapon. Focus requirements are sensor-defined, as some energy weapons
+    // can be omnidirectional. The proper response for this command is the generic success message.
+    ActionCommandInfo energize = 10;
+
+    // DeviceCommandType.DEVCMD_PROBE command type
+    // Instructs a sensor to attempt to focus on a track or location more closely. The exclusivity and extent of this focus is
+    // dependent on the sensor. The proper response for this command is the generic success message.
+    ProbeCommandInfo probe = 11;
+
+    // DeviceCommandType.DEVCMD_FIRE command type
+    // A call for fire from a kinetic weapon. Presupposes that the weapon has been otherwise focused on a target
+    // via a SLEW command. If the weapon has not been focused, and the device requires such, this command should
+    // fail by default.
+    // The proper response to this command is the generic response message
+    ActionCommandInfo fire = 12;
+
+    //  matches DeviceCommandType.SLEW_CMD
+    // This command supports multiple SLEW commands andmodes - slewing to a coordinate, to an az/el, to a moving
+    // target, or a manual stream of x/y changes to current angle.
+    SlewCommandInfo slew = 13;
+
+    // Nudge command details
+    // Matches DeviceCommandType.DEVCMD_NUDGE
+    NudgeCommandInfo nudge = 14;
+
+    // matches DeviceCommandType.DEVCMD_CAMERA_FOCUS
+    // Commands the camera to focus using specified parameters.
+    CameraSetFocusCommandInfo focus = 15;
+
+    // matches DeviceCommandType.DEVCMD_CAMERA_ZOOM
+    // Commands the camera to change zoom level using specified parameters.
+    CameraZoomCommandInfo zoom = 16;
+
+    // for DEVCMD_CAMERA_RECORD
+    // Ability to start/stop recording for a camera system. Use component at top to specify
+    // camera type or optic if needed.
+    CameraRecordCommandInfo record = 17;
+
+    // NUC (auto-calibration) command details
+    // Matches DeviceCommandType.DEVCMD_CAMERA_NUC
+    CameraNucCommandInfo nuc = 18;
+
+    // Configures the NORTH setting for a device - generally a radar device
+    // Matches DeviceCommandType.DEVCMD_CONFIG_NORTHING
+    ConfigureNorthingCommandInfo north = 19;
+
+    // Countermeasure command details - supports starting, stopping, and restarting a countermeasure against a target.
+    // Matches DeviceCommandType.DEVCMD_COUNTERMEASURE
+    EwCountermeasureCommandInfo counter = 20;
+
+    // Similar to the TCUT UpdateCandidate command, this command updates the position of an active target,
+    // with position and velocity.
+    // This would be started via EwCountermeasureCommandInfo.EwCountermeasureCommandType=EW_CM_ACTIVATE
+    // and would feed positions to the targeting device while it is countering that target.
+    // Matches DeviceCommandType.DEVCMD_UPDATE_TARGET
+    EwUpdateTargetCommandInfo target = 21;
+
+    // for DEVCMD_END_MISSION
+    // details for ending an active mission. Sent as a broadcast (generally)
+    EndMissionCommandInfo endMission = 22;
+
+  }
+}
+
+//
+// DeviceCommandResponse
+// A response from a device to a command that has been sent to it
+//
+message DeviceCommandResponse {
+  // required - every sent command has a unique identifier named commandId attached to it. this is that
+  // identifier sent back within the response to properly match command with response.
+  string commandId = 1;
+  DeviceCommandType commandType = 2; // required - the command type being responded to
+  string deviceId = 3; // required -the device the command was sent to
+  int64 timestamp = 4; // required - (milliseconds since epoch)
+  bool willComply = 5; // required - if the device has complied with the command or not
+  string details = 6; // optional - any detail information regarding the response - particularly in a fail case
+}
+
+//
+// ActionCommandInfo
+// A generic command definition that supports a target and a cancel for the operation.
+// Used for deploy, energize, fire commands
+//
+message ActionCommandInfo {
+  TargetIdentifier target = 1; // an optional target for this action
+  bool cancel = 2; // Indicates to the system that any continuous action should be cancelled if true.
+}
+
+//
+// AffiliateCommandInfo
+// DeviceCommandType.DEVCMD_AFFILIATE command type
+// Notifies the system that a target was verified externally. The proper response to an affiliation command
+// is a generic success message.
+// NOT BITWISE compatible with DON.AffiliationMsg (in HMI)
+//
+message AffiliateCommandInfo {
+  TargetIdentifier target = 1; // the track or threat that we want to change the affiliation for
+  TargetAffiliation affiliation = 2; // affiliation NOTE! change from string
+  // NOTE: TCUT message contains SUPPRESS boolean. needed?
+}
+
+// begin Probe command
+
+//
+// ProbeCommandInfo
+// DeviceCommandType.DEVCMD_PROBE command type
+// Instructs a sensor to attempt to focus on a track or location more closely. The exclusivity and extent of this focus is
+// dependent on the sensor. The proper response for this command is the generic success message.
+//
+message ProbeCommandInfo {
+  // Indicates to the system that the provided focus (if any) on this target should
+  // be halted if true. If no focus is provided, all focus commands on the system should be ended.
+  bool cancel = 1;
+  ProbeCommandActionType action = 2;
+  oneof data {
+    ProbeDirectionalCommandInfo direction = 3;
+    ProbeCuedCommandInfo cued = 4;
+  }
+}
+
+//
+// ProbeCommandActionType
+// Which PROBE command is being sent
+//
+enum ProbeCommandActionType {
+  PROBE_CMD_UNKNOWN = 0;
+  PROBE_CMD_DIRECTIONAL = 1;
+  PROBE_CMD_CUED = 2;
+}
+
+//
+// ProbeDirectionalCommandType
+// Which PROBE directional command type is being sent
+//
+enum ProbeDirectionalCommandType {
+  PROBE_DIRECTIONAL_UNKNOWN = 0;
+  PROBE_DIRECTIONAL_POSITION = 1;
+  PROBE_DIRECTIONAL_LOB = 2;
+}
+
+//
+// ProbeDirectionalCommandInfo
+// sub-message of ProbeCommandInfo
+// Commands the radar to place a directional trackbeam. This is a request for the radar to pay special attention to a particular
+// direction in space. How the radar allocates this attention is radar-defined.
+//
+message ProbeDirectionalCommandInfo {
+
+  // A directional probe command can be directed at a specific map position or along a LOB.
+  // this enum defines which one is being sent.
+  ProbeDirectionalCommandType type = 1;
+
+  oneof data {
+    // Position to direct the radar towards for this trackbeam. Default is to provide ECEF.
+    CoordinateThreeD position = 2;
+
+    // Line of bearing from the commanded radar for this trackbeam. It is up to the sender to
+    // provide this value with respect to the radar’s location, otherwise an ECEF value should be used. (Units:
+    // degrees)
+    LineOfBearing lob = 3;
+  }
+}
+
+//
+// ProbeCuedCommandInfo
+// sub-message of ProbeCommandInfo
+// Begins a cue-based focus, using some internal track from the sensor
+//
+message ProbeCuedCommandInfo {
+  TargetIdentifier target = 1; // target to cue to for the probe command.
+}
+
+// end Probe command
+
+// start SLEW command
+
+//
+// SlewCommandActionType enum
+// The different kinds of SLEWs we can perform
+//
+enum SlewCommandActionType {
+
+  // a slew to a static coordinate (ECEF or LLA)
+  SLEW_CMD_TO_LOCATION = 0;
+
+  // a slew to a static az/el
+  SLEW_CMD_TO_LOB = 1;
+
+  // a slew to a moving target, where the positional information comes from a MEDUSA threat feed
+  // of positional information for that threat.
+  SLEW_CMD_TO_TARGET = 2;
+
+  // a slew to a moving target, where the device is responsible for positional tracking
+  // (visual, RF, other). The device will be provided with the ID of the target to track.
+  SLEW_CMD_AUTO_TRACK = 3;
+
+  // a slewing of a sensor relative to its current position as a percentage of a -1.0 to 1.0 value
+  // in the X or Y direction. Primarily used for joystick slewing.
+  SLEW_CMD_MANUAL = 4;
+
+  // this command sets initialization/configuration values into a SLEWing device.
+  // It sets limits on how fast the device can slew in AZ and in EL. It also supports completely
+  // turning on or off slewing of the devices. This matches the TCUT3 SetSlewRates command.
+  SLEW_CMD_CONFIGURE_RATES = 5;
+}
+
+//
+// SlewCmdInfo
+// matches DeviceCommandType.SLEW_CMD
+// This command supports multiple SLEW modes - slewing to a coordinate, to an az/el, to a moving
+// target, or a manual stream of x/y changes to current az.
+// For static slew, instructs a sensor to direct itself to a certain location (ECEF or Azimuth/Elevation).
+// For targeted, a request for the sensor to slew itself according to a cue. The cue is assumed to be provided
+// via a position feed, guaranteeing unique identification of the cue with source_system and track_id/threat_id
+//
+message SlewCommandInfo {
+  SlewCommandActionType action = 1; // the kind of slew to perform
+  oneof data {
+    CoordinateThreeD location = 2; // for SLEW_CMD_TO_LOCATION
+    LineOfBearing lob = 3; // for SLEW_CMD_TO_LOB
+    SlewToTargetCommandInfo target = 4; // for SLEW_CMD_TO_TARGET
+    SlewToTargetCommandInfo auto = 5; // for SLEW_CMD_AUTO_TRACK
+    SlewManualCommandInfo manual = 6; // for SLEW_CMD_MANUAL
+    SlewRateConfigurationInfo rates = 7; // for SLEW_CMD_CONFIGURE_RATES
+  }
+}
+
+//
+// SlewRateConfigurationInfo
+// sub-message of SlewCommandInfo
+// Used with SLEW_CMD_CONFIGURE_RATES
+// Sets the slew rates for the device (or some sub-component). This is a configuration command,
+// not an action command. Use SlewManualCommandInfo for actively changing slew position manually.
+//
+message SlewRateConfigurationInfo {
+  double azimuthRate = 1; //  (azimuth_angle | required) - New azimuth slew rate (Units: degrees/second)
+  double elevationRate = 2; // (elevation_angle | required) - New elevation slew rate (Units: degrees/second)
+  bool enable = 3; //  Enable(true)/Disable(false) system slewing for this device
+}
+
+//
+// SlewToTargetCommandInfo
+// sub-message of SlewCommandInfo
+// Used with SLEW_CMD_TO_TARGET, the identification of the target to slew to
+//
+message SlewToTargetCommandInfo {
+  TargetIdentifier target = 1;
+  bool cancel = 4; // stop slewing to target/cue
+  bool pause = 5; // pause the active cueing/targeting. this matches the ignore_slew command in DON
+}
+
+//
+// SlewManualCommandInfo
+// sub-message of SlewCommandInfo
+// for SLEW_CMD_START_MANUAL
+// A manual slew is used in conjunction with a joystick, supporting a steady stream of direction change commands
+//
+message SlewManualCommandInfo {
+  float x = 1; // the speed at which to slew in the X direction, as a percentage value between -1 and +1
+  float y = 2; // the speed at which to slew in the Y direction, as a percentage value between -1 and +1
+
+  // NOTE! this moves away from the separate DON StopManualSlewMsg message.
+  // this follows our cancel patterns in other commands
+  // stops a manual slew
+  bool cancel = 3;
+}
+
+// SLEW end
+
+//
+// NudgeCommandType enum
+// Nudge command direction. Used in NudgeCommandInfo
+//
+enum NudgeCommandType {
+  NUDGE_CMD_LEFT = 0;
+  NUDGE_CMD_RIGHT = 1;
+  NUDGE_CMD_UP = 2;
+  NUDGE_CMD_DOWN = 3;
+  NUDGE_CMD_ZOOM_IN = 4;
+  NUDGE_CMD_ZOOM_OUT = 5;
+}
+
+//
+// NudgeCommandInfo
+// Nudge command details
+// Matches DeviceCommandType.DEVCMD_CAMERA_NUDGE
+//
+message NudgeCommandInfo {
+  NudgeCommandType type = 1; // the direction of the nudge to perform
+  google.protobuf.DoubleValue nudgeAmount = 2; //  percentage - optional nudge amount to change (Units: 0-1 Percentage of maximum nudge)
+}
+
+//
+// CameraSetFocusCommandInfo
+// for DEVCMD_CAMERA_FOCUS
+// Commands the camera to focus using specified parameters.
+//
+message CameraSetFocusCommandInfo {
+  bool focusNear = 1; //  (xs:boolean | required) - Boolean to set focus near.
+  bool stopFocus = 2; //  (xs:boolean | required) - Boolean to stop focus.
+  bool autoFocus = 3; //  (xs:boolean | required) - Boolean to set auto focus.
+}
+
+//
+// CameraRecordCommandInfo
+// for DEVCMD_CAMERA_RECORD
+// Ability to start/stop recording for a camera system. Use component at top to specify
+// camera type or optic if needed.
+//
+message CameraRecordCommandInfo {
+  bool cancel = 1; //  (xs:boolean | required) - cancel recording or start recording
+}
+
+//
+// CameraZoomCommandType enum
+// Specific ZOOM operation to send.
+// Used in CameraZoomCommandInfo message
+//
+enum CameraZoomCommandType {
+  ZOOM_CMD_STOP = 0;
+  ZOOM_CMD_IN = 1;
+  ZOOM_CMD_OUT = 2;
+}
+
+//
+// CameraZoomCommandInfo
+// Commands the camera to change zoom level using specified parameters.
+// Matches DeviceCommandType.DEVCMD_CAMERA_ZOOM
+//
+message CameraZoomCommandInfo {
+  CameraZoomCommandType type = 1; // the type of zoom to perform - in/out/stop
+  google.protobuf.DoubleValue zoomLevel = 2; //  percentage - optional zoom level to move to (Units: 0-1 Percentage of maximum zoom)
+}
+
+//
+// CameraNucCommandInfo
+// NUC (auto-calibration) command details
+// Matches DeviceCommandType.DEVCMD_CAMERA_NUC
+//
+message CameraNucCommandInfo {
+  bool longNuc = 1; // long versus short NUC operation
+}
+
+//
+// EwCountermeasureCommandType
+// Enumerated set of countermeasure action types
+// used within EwCountermeasureCommandInfo message
+//
+enum EwCountermeasureCommandType {
+
+  // tells the EW system to activate a countermeasure.
+  EW_CM_ACTIVATE = 0;
+
+  // The usage of this message is identical to the ActivateCounterMeasure message, except the effect is to halt a counter-
+  // measure instead of activating it. Currently, when sent with no attributes this will halt all RF transmission from the system.
+  // Specific target types and IDs can be individually halted setting countermeasure or target.
+  EW_CM_HALT = 1;
+
+  // This message tells the EW system to restart the countermeasure that is currently active.
+  EW_CM_RESTART = 2;
+}
+
+//
+// EwCountermeasureCommandInfo
+// Countermeasure command details - supports starting, stopping, and restarting a countermeasure against a target.
+// Matches DeviceCommandType.DEVCMD_COUNTERMEASURE
+// Clients should generate a response when completed. Most commands
+// such as going from standby to jamming can be executed immediately. A few commands may take as much as a few
+// hundred milliseconds to execute.
+//
+message EwCountermeasureCommandInfo {
+  EwCountermeasureCommandType type = 1; // the type of countermeasure action being taken
+  TargetIdentifier target = 2; // the id for the target we are countering
+  string countermeasure = 3[deprecated=true]; // DO NOT USE. COUNTERMEASURE WILL BE LISTED IN OPTIONS
+  bool lock = 4; // Indicates whether the system should lock to the candidate’s position.
+  CoordinateEcef start = 5; // optional starting position for counter operation
+  CoordinateEcef end = 6; // optional ending position for counter operation
+  repeated string options = 7; // support for device-specific options, like bands, power levels, and the like
+}
+
+//
+// EwUpdateTargetCommandInfo
+// Similar to the TCUT UpdateCandidate command, this command updates the position of an active target,
+// with position and velocity. This would be started via EwCountermeasureCommandInfo:EW_CM_ACTIVATE
+// and would feed positions to the targeting device while it is countering that target.
+// Matches DeviceCommandType.DEVCMD_UPDATE_TARGET
+//
+message EwUpdateTargetCommandInfo {
+  CoordinateThreeD position = 1; // current target position
+  Vector3 velocity = 2; // current velocity of the target
+}
+
+//
+// ConfigureNorthingCommandInfo
+// Configures the NORTH setting for a device - generally a radar device
+// Matches DeviceCommandType.DEVCMD_CONFIG_NORTHING
+//
+message ConfigureNorthingCommandInfo {
+  float northingAngle = 2; // the angle to set for this device
+}
+
+//
+// EndMissionCommandInfo
+// DeviceCommandType.DEVCMD_END_MISSION command type
+// Notifies the system that a mission has ended, and actions associated with this mission should cease.
+//
+message EndMissionCommandInfo {
+  TargetIdentifier target = 1; // the track or threat that was the mission target (optional)
+  google.protobuf.StringValue missionId = 2; // an id associated with the active mission (optional)
+}
+
+

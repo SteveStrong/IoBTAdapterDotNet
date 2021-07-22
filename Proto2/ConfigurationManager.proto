@@ -1,0 +1,190 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Common.proto";
+import "SAObjects.proto";
+import "SystemConfiguration.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "ConfigurationManagerProto";
+
+
+service ConfigurationManager {
+
+  //
+  // getVersion
+  // Get the version of the Configuration manager. this is a unary blocking call.
+  //
+  rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+  //
+  // getProtectedAreas
+  // Returns the set of protected areas that have been defined within the system configuration.
+  //
+  rpc getProtectedAreas (google.protobuf.Empty) returns (stream ProtectedAreaConfiguration);
+
+  //
+  // getSystemLevels
+  // Returns the current operating level information for the system
+  //
+  rpc getSystemLevels (google.protobuf.Empty) returns (SystemLevelsInfo);
+
+  //
+  // setSystemLevels
+  // Set the current operating level information for the system
+  //
+  rpc setSystemLevels (SystemLevelsInfo) returns (ResponseInfo);
+
+  // region SA object calls
+
+  //
+  // getSAObjects
+  // Returns the set of SA objects in the system for the inbound parameters of owner and groups
+  //
+  rpc getSAObjects (SAObjectGetRequest) returns (stream SAObjectSubscriptionResponse);
+
+  //
+  // getSAObjectGroups
+  // Returns the set of SA Object groups currently defined in the system
+  //
+  rpc getSAObjectGroups (google.protobuf.Empty) returns (stream google.protobuf.StringValue);
+
+  //
+  // createSAObject
+  // Creates a new SA object in the system
+  //
+  rpc createSAObject (SAObjectUpdateRequest) returns (SAObjectUpdateResponse);
+
+  //
+  // updateSAObject
+  // Updates an existing SA object in the system
+  //
+  rpc updateSAObject (SAObjectUpdateRequest) returns (SAObjectUpdateResponse);
+
+  //
+  // deleteSAObject
+  // Deletes an existing SA object in the system
+  //
+  rpc deleteSAObject (SAObjectDeleteRequest) returns (SAObjectUpdateResponse);
+
+  // endregion
+
+  //
+  // subscribe
+  // Ability for a client to receive async updates to the system configuration information.
+  //
+  rpc subscribe (ConfigurationManagerSubscription) returns (stream ConfigurationSubscriptionResponse);
+
+  // getSystemConfig
+  // Returns the system configuration
+  rpc getSystemConfig(google.protobuf.Empty) returns (SystemConfiguration);
+
+  // getSdkServicesConfig
+  // Returns the SDK service configs for all SDK services
+  rpc getSdkServicesConfig(google.protobuf.Empty) returns (SdkServicesConfigurationResponse);
+}
+
+//
+// ConfigurationManagerSubscription
+// Inbound details for subscribing to the configuration manager
+//
+message ConfigurationManagerSubscription {
+  bool subscribeToLevels = 1; // whether or not to receive changes to the system levels (classification, FPCON)
+  bool subscribeToProtectedAreas = 2; // whether or not to receive changes to the set of SA objects in the system
+  bool subscribeToSAObjects = 3; // whether or not to receive changes to the set of SA objects in the system
+  SAObjectGetRequest saRequest = 4; // the details for the subscription to SA objects
+}
+
+
+//
+// ConfigurationResponseType
+// When a client receives a ConfigurationSubscriptionResponse, it will be an update to one of the
+// sets of information being handled by the configuration manager. This defines which piece is being
+// returned
+//
+enum ConfigurationResponseType {
+  CONFIGURATION_RESPONSE_UNKNOWN = 0;
+  CONFIGURATION_RESPONSE_LEVELS = 1;
+  CONFIGURATION_RESPONSE_PROTECTED_AREAS = 2;
+  CONFIGURATION_RESPONSE_SA_OBJECTS = 3;
+}
+
+//
+// ConfigurationSubscriptionResponse
+// wrapper around a configuration manager subscription response. Based on client subscription it could be
+// any of the values within ConfigurationResponseType.
+//
+message ConfigurationSubscriptionResponse {
+  ConfigurationResponseType type = 1; // what type of data is represented here
+  oneof data {
+    SystemLevelsSubscriptionResponse levels = 2; // system levels specific data
+    ProtectedAreaSubscriptionResponse pa = 3; // protected area specific data
+    SAObjectSubscriptionResponse sa = 4; // SA object specific data
+  }
+}
+
+//
+// ProtectedAreaSubscriptionResponse
+// This is the message that is returned to a subscribed client when a protected area change occurs within the system.
+// It tells you what kind of change just occurred - a create/update/delete
+//
+message ProtectedAreaSubscriptionResponse {
+  SystemChangeType change = 1; // the type of change that has occurred - add/update/delete
+  ProtectedAreaConfiguration pa = 2; // the protected area details
+}
+
+//
+// SystemLevelsSubscriptionResponse
+// This is the message that is returned to a subscribed client when a system levels change occurs within the system.
+// It tells you what kind of change just occurred - a create/update/delete
+//
+message SystemLevelsSubscriptionResponse {
+  SystemChangeType change = 1; // the type of change that has occurred - add/update/delete
+  SystemLevelsInfo levels = 2; // the system level details
+}
+
+//
+// SystemLevelsInfo
+// This message defines the current operating levels of the system
+//
+message SystemLevelsInfo {
+  FPConLevel level = 1; // current FPCON operating level
+  ClassificationLevel classification = 2; // current classification level
+  bool systemSupportsFPConLevel = 3; // if this installation/system uses a FPCON level or not
+  bool systemSupportsClassification = 4; // if this installation/system uses a classification level or not
+}
+
+//
+// FPConLevel
+// enumeration of available FPCON (Force Protection Condition) levels
+//
+enum FPConLevel {
+  FPCON_LEVEL_UNKNOWN = 0;
+  FPCON_LEVEL_NORMAL = 1;
+  FPCON_LEVEL_A = 2;
+  FPCON_LEVEL_B = 3;
+  FPCON_LEVEL_C = 4;
+  FPCON_LEVEL_D = 5;
+}

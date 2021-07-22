@@ -1,0 +1,68 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "Common.proto";
+import "BattleDamageAssessment.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "BattleManagerProto";
+
+//
+// BattleManager
+// Service used to process BattleDamage assessments
+//
+service BattleManager {
+
+  //
+  // getVersion
+  // Get the version of the Configuration manager. this is a unary blocking call.
+  //
+  rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+  rpc publishBattleDamageAssessment (BattleDamageAssessment) returns (ResponseInfo);
+
+  //
+  // subscribe
+  // client will have the ability and continuity to receive battle damage assessments as BattleDamageAssessment objects
+  // from the stream without a definitive end until the request is made to stop or the server is shut down.
+  // Input: ClientAssessmentSubscription contains details for the subscription request
+  // Output: An async stream over which BattleDamageAssessment class values will be received as they occur in the system
+  //
+  rpc subscribe (ClientAssessmentSubscription) returns (stream BattleDamageAssessment);
+
+  //
+  // cancelSubscription
+  // Cancels the stream being sent via subscribe.
+  // Input parameters: none
+  // Output: ResponseInfo class contains success/failure, plus a description on failure
+  //
+  rpc cancelSubscription (google.protobuf.Empty) returns (ResponseInfo);
+}
+
+//
+// ClientAssessmentSubscription
+// inbound battle damage assessment subscription details for this client
+//
+message ClientAssessmentSubscription {
+  bool setSubscribeToAssessment = 1; // yes/no subscribe to assessment coming from battle manager
+}

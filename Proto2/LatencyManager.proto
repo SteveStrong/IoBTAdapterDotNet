@@ -1,0 +1,157 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+
+import "Common.proto";
+import "google/protobuf/empty.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "LatencyManagerProto";
+
+//
+// The latency manager service provides public calls into the MEDUSA system for
+// track latency info.
+//
+service LatencyManager {
+
+	//
+	// get version
+	// get the version of the latency manager. this is a unary blocking call.
+	//
+	rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+	//
+	// subscribe to latency statuses
+	// ability for a client to receive alerts as they occur within the system.
+	//
+	rpc subscribe (ClientLatencySubscription) returns (stream LatencySubscriptionResponse);
+
+	//
+	// cancel subscription
+	// turns off the stream being sent via subscribe.
+	//
+	rpc cancelSubscription (google.protobuf.Empty) returns (ResponseInfo);
+
+	//
+	// Add latency information into the system.
+	//
+	rpc publish (LatencyInfo) returns (ResponseInfo);
+
+	//
+	// reset calculation values within the latency manager
+	//
+	rpc reset (google.protobuf.Empty) returns (ResponseInfo);
+}
+
+//
+// Client Latency Subscription
+// contains the filter definition for the latency subscription
+//
+message ClientLatencySubscription {
+	// Specifies what type of data that a timestamp refers to. (Track, Threat, Command, etc.)
+	// If none is set filtering will not be done against type.
+	oneof latencyType {
+		LatencyType latencyTypeFilter = 1;
+	}
+	// Outlines the type of latency value that should be sent. (Most recent, rolling average, overall)
+	// If none is set filtering will not be done against the report type.
+	oneof latencyReportType {
+		LatencyReportType reportTypeFilter = 2;
+	}
+	// Defines the 'start' and 'end' point for the measured latency. Both start and end are LatencyCollectionPoint objects.
+	// If none is set filtering will not be done against the span.
+	LatencySpan latencySpanFilter = 3;
+	// Dictates the source of the latency report. This will be a string that must match to the device/service which
+	// generates/sends the report.
+	// If none is set filtering will not be done against the source.
+	string sourceFilter = 4;
+}
+
+// the from and the to for a collection span
+enum LatencyCollectionPoint {
+	APM_PRE_PROCESSING = 0;
+	APM_POST_PROCESSING = 1;
+	CTC_DEVICE_SOURCE = 2;
+	CTC_PRE_PROCESSING = 3;
+	CTC_POST_PROCESSING = 4;
+	DEVICE_SOURCE = 5;
+	FC_PRE_PROCESSING = 6;
+	FC_POST_PROCESSING = 7;
+	HMIC_PRE_PROCESSING = 8;
+	HMIC_POST_PROCESSING = 9;
+	MAS_PRE_PROCESSING = 10;
+	MAS_POST_PROCESSING = 11;
+	TPM_PRE_PROCESSING = 12;
+	TPM_POST_PROCESSING = 13;
+	VC_PRE_PROCESSING = 14;
+	VC_POST_PROCESSING = 15;
+	UNKNOWN_COLLECTION_POINT = 16;
+}
+
+// Specifies what type of data that a timestamp refers to.
+enum LatencyType {
+	LATENCY_TRACK = 0;
+	LATENCY_THREAT = 1;
+	LATENCY_COMMAND = 2;
+	LATENCY_DEVICE_STATUS = 3;
+	LATENCY_OTHER = 4;
+}
+
+// Specifies to which span of the data path the latency values apply.
+message LatencySpan {
+	LatencyType type = 1;
+	LatencyCollectionPoint startLocation = 2;
+	LatencyCollectionPoint endLocation = 3;
+	string source = 4;
+}
+
+
+// Current details for propagation through a part of the system.
+message LatencyInfo {
+	LatencySpan identifier = 1;
+	int32 minimumLatency = 2; // milliseconds
+	int32 maximumLatency = 3; // milliseconds
+	float averageLatency = 4; // milliseconds
+	int64 count = 6; // number of messages included in these statistics
+	int64 period = 7; // time period, in milliseconds, over which this data was received
+	int64 timeReported = 8; // the point in time, in milliseconds, at which this data was reported
+}
+
+// information sent back to a subscribed client
+message LatencySubscriptionResponse {
+	int64 timestamp = 1;
+	repeated LatencyReport reports = 2;
+}
+
+// report type
+enum LatencyReportType {
+	LATENCY_LATEST = 0;
+	LATENCY_ROLLING = 1;
+	LATENCY_OVERALL = 2;
+}
+
+// repeated field within the LatencySubscriptionResponse
+message LatencyReport {
+	LatencySpan identifier = 1; // the from-to combination
+	LatencyReportType type = 2; // type of this report
+	int64 reportDuration = 3; // period for this report (in seconds)
+	LatencyInfo details = 4; // actual report details
+}

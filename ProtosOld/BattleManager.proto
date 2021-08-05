@@ -18,13 +18,15 @@
 --------------------------------------------------------------------------------------------------*/
 
 syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
 
 import "google/protobuf/empty.proto";
-import "Common.proto";
-import "BattleDamageAssessment.proto";
+import "Protos/Common.proto";
+import "Protos/BattleDamageAssessment.proto";
 
-package mil.airforce.mc2.sdk.generated;
-option java_package = "mil.airforce.mc2.sdk.generated";
+package medusa.generated;
+option java_package = "medusa.generated";
 option java_outer_classname = "BattleManagerProto";
 
 //
@@ -40,29 +42,4 @@ service BattleManager {
   rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
 
   rpc publishBattleDamageAssessment (BattleDamageAssessment) returns (ResponseInfo);
-
-  //
-  // subscribe
-  // client will have the ability and continuity to receive battle damage assessments as BattleDamageAssessment objects
-  // from the stream without a definitive end until the request is made to stop or the server is shut down.
-  // Input: ClientAssessmentSubscription contains details for the subscription request
-  // Output: An async stream over which BattleDamageAssessment class values will be received as they occur in the system
-  //
-  rpc subscribe (ClientAssessmentSubscription) returns (stream BattleDamageAssessment);
-
-  //
-  // cancelSubscription
-  // Cancels the stream being sent via subscribe.
-  // Input parameters: none
-  // Output: ResponseInfo class contains success/failure, plus a description on failure
-  //
-  rpc cancelSubscription (google.protobuf.Empty) returns (ResponseInfo);
-}
-
-//
-// ClientAssessmentSubscription
-// inbound battle damage assessment subscription details for this client
-//
-message ClientAssessmentSubscription {
-  bool setSubscribeToAssessment = 1; // yes/no subscribe to assessment coming from battle manager
 }

@@ -18,16 +18,18 @@
 --------------------------------------------------------------------------------------------------*/
 
 syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
 
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
-import "Common.proto";
-import "SAObjects.proto";
-import "SystemConfiguration.proto";
+import "Protos/Common.proto";
+import "Protos/SAObjects.proto";
+import "Protos/SystemConfiguration.proto";
 
-package mil.airforce.mc2.sdk.generated;
-option java_package = "mil.airforce.mc2.sdk.generated";
+package medusa.generated;
+option java_package = "medusa.generated";
 option java_outer_classname = "ConfigurationManagerProto";
 
 

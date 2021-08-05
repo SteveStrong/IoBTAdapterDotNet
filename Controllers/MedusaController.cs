@@ -54,14 +54,15 @@ namespace IoBTAdapterDotNet.Controllers
         {
             try
             {
-                if ( payload.command == null) {
+                if (payload.command == null)
+                {
                     var error = new ContextWrapper<UDTO_Command>("Command is null");
                     return BadRequest(error);
                 }
 
                 //simplify for general topic based commands
                 await this.medusaHub.Clients.All.SendAsync(payload.command, payload);
-                
+
                 var wrap = new ContextWrapper<UDTO_Command>(payload);
                 return Ok(wrap);
             }
@@ -79,13 +80,17 @@ namespace IoBTAdapterDotNet.Controllers
             try
             {
                 //broadcast a command
-                if ( payload.command != "SLEW") {
-                    var error = new ContextWrapper<UDTO_Command>(payload);
-                    return BadRequest(error);
-                }
- 
+                // if ( payload.command != "SLEW") {
+                //     var error = new ContextWrapper<UDTO_Command>(payload);
+                //     return BadRequest(error);
+                // }
+
                 //broadcast a command to medusa
-                //var result = await this.medusaEntity.Slew();
+                var result = this.medusaEntity.Slew();
+                payload.args = new List<string>() {
+                    result.Status.ToString(),
+                    result.Message
+                };
 
                 await this.medusaHub.Clients.All.SendAsync("Slew", payload);
                 var wrap = new ContextWrapper<UDTO_Command>(payload);
@@ -98,5 +103,37 @@ namespace IoBTAdapterDotNet.Controllers
             }
         }
 
+
+        [HttpPost("Hello")]
+        public async Task<ActionResult<ContextWrapper<UDTO_Command>>> Hello(UDTO_Command payload)
+        {
+            try
+            {
+                //broadcast a command
+                // if ( payload.command != "SLEW") {
+                //     var error = new ContextWrapper<UDTO_Command>(payload);
+                //     return BadRequest(error);
+                // }
+
+                //broadcast a command to medusa
+                var result = await this.medusaEntity.HelloWorld();
+                payload.args = new List<string>() {
+                    result.Status.ToString(),
+                    result.Message
+                };
+
+
+
+                await this.medusaHub.Clients.All.SendAsync("HelloWorld", payload);
+                var wrap = new ContextWrapper<UDTO_Command>(payload);
+                return Ok(wrap);
+            }
+            catch (Exception ex)
+            {
+                var wrap = new ContextWrapper<UDTO_Command>(ex.Message);
+                return BadRequest(wrap);
+            }
+        }
     }
 }
+

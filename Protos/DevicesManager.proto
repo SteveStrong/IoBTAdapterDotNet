@@ -20,7 +20,6 @@
 syntax = "proto3";
 option csharp_namespace = "MedusaAdapter";
 
-
 import "google/protobuf/empty.proto";
 import "Protos/Common.proto";
 import "Protos/DeviceCommands.proto";
@@ -28,8 +27,8 @@ import "Protos/Threats.proto";
 import "Protos/SystemConfiguration.proto";
 import "Protos/DevicesStatus.proto";
 
-package medusa.generated;
-option java_package = "medusa.generated";
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
 option java_outer_classname = "DevicesManagerProto";
 
 //

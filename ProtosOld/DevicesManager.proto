@@ -18,16 +18,18 @@
 --------------------------------------------------------------------------------------------------*/
 
 syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
 
 import "google/protobuf/empty.proto";
-import "Common.proto";
-import "DeviceCommands.proto";
-import "Threats.proto";
-import "SystemConfiguration.proto";
-import "DevicesStatus.proto";
+import "Protos/Common.proto";
+import "Protos/DeviceCommands.proto";
+import "Protos/Threats.proto";
+import "Protos/SystemConfiguration.proto";
+import "Protos/DevicesStatus.proto";
 
-package mil.airforce.mc2.sdk.generated;
-option java_package = "mil.airforce.mc2.sdk.generated";
+package medusa.generated;
+option java_package = "medusa.generated";
 option java_outer_classname = "DevicesManagerProto";
 
 //

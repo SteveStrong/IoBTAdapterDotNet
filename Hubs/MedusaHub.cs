@@ -64,6 +64,21 @@ namespace IoBTAdapterDotNet.Hubs
             return payload;
         }
 
+        public async Task<UDTO_Command> HelloWorld(UDTO_Command payload)
+        {
+            // if ( payload.command != "SLEW") {
+            //     await Clients.All.SendAsync("ERROR", payload);
+            // }
+
+            //broadcast a command to medusa
+            var result = this.medusaEntity.HelloWorld();
+
+            // share with Squire clients
+            var msg = "Command";
+            await Clients.All.SendAsync(msg, payload);
+            return payload;
+        }
+
         public async Task<UDTO_Command> Slew(UDTO_Command payload)
         {
             if ( payload.command != "SLEW") {
@@ -71,7 +86,7 @@ namespace IoBTAdapterDotNet.Hubs
             }
 
             //broadcast a command to medusa
-            var result = await this.medusaEntity.Slew();
+            var result = this.medusaEntity.Slew();
 
             // share with Squire clients
             var msg = "Command";

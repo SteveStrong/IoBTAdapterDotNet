@@ -1,10 +1,12 @@
 syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
 
 import "google/protobuf/wrappers.proto";
-import "Common.proto";
+import "Protos/Common.proto";
 
-package mil.airforce.mc2.sdk.generated;
-option java_package = "mil.airforce.mc2.sdk.generated";
+package medusa.generated;
+option java_package = "medusa.generated";
 option java_outer_classname = "BattleDamageAssessmentProto";
 
 //
@@ -27,7 +29,7 @@ message BattleDamageAssessment{
   BdaDamageLevel bdaDamageLevel = 10;  // The level of damage on a target.
   ConfidenceCode damageOnTargetConfidence = 11; // The confidence code on the level on damage done to the target.
   CollateralDamageType collateralDamageType = 12; // Were there any collateral damage?
-  mil.airforce.mc2.sdk.generated.CoordinateLla position = 13;  // The position of the target being damaged assessed.
+  medusa.generated.CoordinateLla position = 13;  // The position of the target being damaged assessed.
 }
 
 enum EffectorType {

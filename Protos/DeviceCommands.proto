@@ -20,12 +20,11 @@
 syntax = "proto3";
 option csharp_namespace = "MedusaAdapter";
 
-
 import "Protos/Common.proto";
 import "google/protobuf/wrappers.proto";
 
-package medusa.generated;
-option java_package = "medusa.generated";
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
 option java_outer_classname = "DeviceCommandsProto";
 
 //
@@ -205,10 +204,21 @@ message ProbeCommandInfo {
   // Indicates to the system that the provided focus (if any) on this target should
   // be halted if true. If no focus is provided, all focus commands on the system should be ended.
   bool cancel = 1;
+  ProbeCommandActionType action = 2;
   oneof data {
-    ProbeDirectionalCommandInfo direction = 2;
-    ProbeCuedCommandInfo cued = 3;
+    ProbeDirectionalCommandInfo direction = 3;
+    ProbeCuedCommandInfo cued = 4;
   }
+}
+
+//
+// ProbeCommandActionType
+// Which PROBE command is being sent
+//
+enum ProbeCommandActionType {
+  PROBE_CMD_UNKNOWN = 0;
+  PROBE_CMD_DIRECTIONAL = 1;
+  PROBE_CMD_CUED = 2;
 }
 
 //

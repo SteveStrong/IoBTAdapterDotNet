@@ -1,0 +1,648 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Protos/Common.proto";
+import "Protos/HmiFilter.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "SystemConfigurationProto";
+
+//
+// SystemConfiguration
+// Contains the complete configuration suite
+//
+message SystemConfiguration {
+  string version = 1; //The version of this file
+  repeated DonServiceConfiguration donServices = 2;// the list of the don services that are configured
+  repeated SdkServiceConfiguration sdkServices = 3;// the list of the SDK services that are configured
+  repeated HmiConfiguration hmis = 4;// the list of the hmis that are configured
+  repeated DeviceConfiguration devices = 5;// the list of the don devices that are configured
+  repeated ProtectedAreaConfiguration protectedAreas = 6;// the list of the protected areas that are configured
+  GlobalSettingsConfiguration globalSettings = 7;// the set of global settings
+}
+
+//
+// SdkServicesConfigurationResponse
+// Response when SdkServicesConfigurationRequest is made
+//
+message SdkServicesConfigurationResponse{
+  repeated SdkServiceConfiguration services = 1; // List of SDK service configurations
+}
+
+//
+// SdkServiceConfiguration
+// Contains the necessary information for an SDK service
+//
+message SdkServiceConfiguration{
+  SdkServiceType type = 1; // Service Type
+  TransportConfiguration transport = 2; // Service Transport Data
+}
+
+//
+// SdkServiceType
+// Defines the names for the Sdk services.
+//
+enum SdkServiceType{
+  SDK_SERVICE_UNKNOWN = 0[(description) = "Unknown"];// I don't know, and neither do you, so stop pretending you know
+  SDK_SERVICE_DEVICES_MANAGER = 1[(description) = "Devices Manager"];
+  SDK_SERVICE_THREATS_MANAGER = 2[(description) = "Threats Manager"];
+  SDK_SERVICE_SYSTEMS_MANAGER = 3[(description) = "Systems Manager"];
+  SDK_SERVICE_LATENCY_MANAGER = 4[(description) = "Latency Manager"];
+  SDK_SERVICE_PERSISTENCE_MANAGER = 5[(description) = "Persistence Manager"];
+  SDK_SERVICE_CONFIGURATION_MANAGER = 6[(description) = "Configuration Manager"];
+  SDK_SERVICE_ALERTS_MANAGER = 7[(description) = "Alerts Manager"];
+  SDK_SERVICE_COUNTERMEASURE_STATE_SERVICE = 8[(description) = "Countermeasure State Service"];
+  SDK_SERVICE_BATTLE_MANAGER = 9[(description) = "Battle Manager"];
+}
+
+//
+// DonServiceConfiguration
+// Contains all the configurations for each of the services used, can contain any of the
+// typical service configurations.
+//
+message DonServiceConfiguration
+{
+  string serviceName = 1; // Service Name
+  repeated DonServiceTransportConfiguration topicConfigs = 2; // Contains the topics and corresponding uri's
+
+  oneof configurations {
+    AirPictureModuleConfiguration airPictureModuleConfiguration = 3; //the AirPicture Module Configuration
+    DonLoggingModuleConfiguration donLoggingModuleConfiguration = 4;//the DonLogging Module Configuration
+    FireControllerConfiguration fireControllerConfiguration = 5;//the FireController Module Configuration
+    HmiControllerConfiguration hmiControllerConfiguration = 6;//the HmiController Module Configuration
+    ThreatPriorityModuleConfiguration threatPriorityModuleConfiguration = 7;//the  ThreatPriority Module Configuration
+    VideoControllerConfiguration videoControllerConfiguration = 8;//the VideoController Module Configuration
+    CorrelatorConfiguration correlator = 9;// the set of correlator settings
+  }
+}
+
+//
+// TransportType
+// Defines the types of transports that can be used
+//
+enum TopicType{
+  TOPIC_TYPE_UNKNOWN = 0; // I don't know, and neither do you, so stop pretending you know
+  TOPIC_TYPE_ALERT = 1;
+  TOPIC_TYPE_STATUS = 2;
+  TOPIC_TYPE_THREAT = 3;
+  TOPIC_TYPE_COMMAND = 4;
+
+}
+
+//
+// DonServiceTransportConfiguration
+// Contains a transport type and corresponding uri
+//
+message DonServiceTransportConfiguration{
+  TopicType topic = 1; // Topic type the transport expects to receive
+  TransportConfiguration uri = 2; // The transport for the topic type messages
+}
+
+//
+// LatencyThresholdInfo
+// Latency information used by Latency Manager
+//
+message LatencyThresholdInfo
+{
+  int32 latencyWarningThreshold = 1; // The warning threshold time in milliseconds
+  int32 latencyErrorThreshold = 2; // The error threshold time in milliseconds
+}
+
+//
+// MapInfo
+// Contains map information for locating AGE map files
+//
+message MapInfo{
+  string ageTilePath = 1; // AGE Root file location
+  string geoidFile = 2; // MSL Geoid File location
+  string mapsPath = 3; // Path to Maps
+}
+
+//
+// GlobalSettingsConfiguration
+// Contains the global settings
+//
+message GlobalSettingsConfiguration{
+  ClassificationLevel classification = 1; // Classification
+  MapInfo mapInfo = 2; // Map Information
+  LatencyThresholdInfo latencyThresholdInfo = 3; // Latency
+  string loggingAppenderUri = 4; // Logging URI
+  bool stopJamOnDisconnect = 5; // Flag for behavior upon client disconnect
+}
+
+//
+// CorrelatorDetails
+// This is the Correlator information needed for communicating with the correlator
+//
+message CorrelatorConfiguration{
+  string correlatorID = 1; //The name of the Correlator
+  int32 publishRate = 2; // The rate in milliseconds for which the Correlator will publish at.
+  TransportConfiguration trackOutTransport = 3; // Transport for correlator tracks out
+  TransportConfiguration threatOutTransport = 4; // Transport for correlator threats out
+}
+
+//
+// CtcDetails
+// This contains the information for communicating with CTC
+//
+message CtcDetails{
+  TransportConfiguration ctcOutTransport = 1; //the output for the CTC
+  TransportConfiguration ctcPriorityRequestTransport = 2; //the priority output for the CTC
+  TransportConfiguration ctcInTransport = 3; //the input for the CTC
+  int32 timeOut = 4; //time in Milliseconds
+}
+
+//
+// ThreatTreatmentType
+// This enumeration classifies the treatment of Non-3D/Optical Threats in Threat Priority Module
+//
+enum ThreatTreatmentType {
+  THREAT_TREATMENT_TYPE_UNKNOWN = 0; // I don't know, and neither do you, so stop pretending you know
+  THREAT_TREATMENT_TYPE_IMMINENT = 1;
+  THREAT_TREATMENT_TYPE_DISTANT = 2;
+}
+
+//
+// ConfidenceInfo
+// Contains the confidence information
+//
+message ThreatConfidenceFiltering{
+  float displayAlwaysValue = 1; // value at which to always show a threat regardless of correlation
+  float displayCorrelatedValue = 2; // value at which to only show a threat regardless of correlation
+  float displayNoneValue = 3; // value at which to never show a threat regardless of correlation
+}
+
+//
+// AirPictureModuleConfiguration
+// The specific configuration for the service
+//
+message AirPictureModuleConfiguration
+{
+  CtcDetails ctcDetails = 1; // CTC information
+  TransportConfiguration inputTransport = 2; // Correlator input transport
+}
+
+//
+// DonLoggingModuleConfiguration
+// The specific configuration for the service
+//
+message DonLoggingModuleConfiguration
+{
+  // Empty for now
+}
+
+//
+// FireControllerConfiguration
+// The specific configuration for the service
+//
+message FireControllerConfiguration
+{
+  // Empty for now
+}
+
+//
+// HmiControllerConfiguration
+// The specific configuration for the service
+//
+message HmiControllerConfiguration
+{
+  TransportConfiguration registrationTransport = 1; // URI for registration
+  int32 statusPublishRate = 2; // Rate the HMI Controller publishes status in milliseconds
+  int32 hmiHeartbeatInterval = 3;  // The expected heartbeat interval from the HMI
+  int32 controllerTimeout = 4; // The amount of time in milliseconds for a disconnect to be detected by HMI controller
+  int32 hmiTimeout = 5; // The amount of time in milliseconds for a disconnect to be detected by HMI
+  bool snapFeaturesAboveGround = 6; // Flag for snapping features above ground on map
+}
+
+//
+// ThreatPriorityModuleConfiguration
+// The specific configuration for the service
+//
+message ThreatPriorityModuleConfiguration
+{
+  ThreatConfidenceFiltering confidenceFilteringInfo = 1; // Contains the confidence information
+  ThreatTreatmentType non3dTreatment = 2; // How we treat Non-3D threats
+  ThreatTreatmentType opticalTreatment = 3; // How we treat Optical threats
+  int32 threatTimeout = 4; // Timeout value for threats
+  int32 threatPublishRate = 5; // Rate for threat publishing
+}
+
+//
+// VideoControllerConfiguration
+// The specific configuration for the service
+//
+message VideoControllerConfiguration
+{
+  string recordingPath = 1; // Location a recorded file should be located
+  int32 segmentSize = 2; // Video segment size in milliseconds
+}
+
+//
+// The HMI configuration for a client
+//
+message HmiConfiguration{
+  string id = 1; // Client ID
+  string name = 2; // Client Name
+  // The home location for the client
+  oneof home{
+    string deviceId = 3; // the device id of which home is referenced
+    CoordinateLla coordinate = 4; // coordinate value for the device home location
+  }
+  TransportConfiguration threatUri = 5; // The URI for threats
+  TransportConfiguration asyncCommUri = 6; // Asynchronous comm URI
+  int32 alarmLevel = 7; // Alarm level value
+  bool flashBanner = 8; // Flag for signaling banner behavior
+  bool displayVideo = 9; // VOD display flag
+  repeated FilterInfo threatFilters = 10; // All the Filters for the client
+}
+
+//
+// ProtectedAreaInfo
+// Details about one defined protected area within the system
+//
+message ProtectedAreaConfiguration {
+  string name = 1; // unique identifier for this protected area
+
+  oneof data {
+    StandardPAType protectedArea = 10; //Standard protected areas
+    KeepOutZoneType keepOutZone = 11;  //the Keep out zones
+    RulesOfEngagementType rulesOfEngagement = 12; //the Rules of Engagement
+  }
+}
+
+//
+//  StandardPAType
+//  Details about a standard Protected Area
+//
+message StandardPAType {
+  bool displayWarningArea = 1; // whether the outer warning boundary should be displayed
+  int32 warningTime = 2; // this defines a buffer (in number of milliseconds) between a threat and this protected area
+  repeated ProtectedAreaWarningAreaConfiguration warningAreas = 3; // internal boundaries at which to augment alerting
+
+  oneof data {
+    CircleShape circle = 10; //the circle type of protected area
+    PolygonShape polygon = 11; //the polygon type of protected area
+    ProtectedAreaMobileInfo mobile = 12; //the mobile type of protected area
+  }
+}
+
+//
+//  KeepOutZoneType
+//  Details about a Keep Out Zone Type
+//
+message KeepOutZoneType {
+  oneof data {
+    CircleShape circle = 10; //the circle type of protected area
+    PolygonShape polygon = 11; //the polygon type of protected area
+  }
+}
+
+//
+//  RulesOfEngagementType
+//  Details about a Rules Of Engagement Type
+//
+message RulesOfEngagementType {
+  bool displayWarningArea = 1; // whether the outer warning boundary should be displayed
+  int32 warningTime = 2; // this defines a buffer (in number of milliseconds) between a threat and this protected area
+  repeated ProtectedAreaWarningAreaConfiguration warningAreas = 3; // internal boundaries at which to augment alerting
+  oneof data {
+    CircleShape circle = 10; //the circle type of protected area
+    PolygonShape polygon = 11; //the polygon type of protected area
+  }
+}
+
+//
+// ProtectedAreaWarningAreaInfo
+// This is an area inside of a protected area that provides further alerting as a threat goes deeper into that protected
+// area.
+//
+message ProtectedAreaWarningAreaConfiguration {
+  string name = 1; // name for this warning area
+  double offset = 2; // the offset from the perimeter of the protected area for this internal extra warning
+  ARGBColor fillColor = 3; // display fill color aarrggbb
+  ARGBColor borderColor = 4; // display border color aarrggbb
+}
+
+message ProtectedAreaMobileInfo {
+  string localDevice = 1; //The First device anchoring the MPA
+  google.protobuf.StringValue remoteDevice = 2; //The second device anchoring the MPA
+  double radius = 3; //The offset of the MPA off of the host devices
+  ARGBColor fillColor = 4; // display fill color aarrggbb
+  ARGBColor borderColor = 5; // display border color aarrggbb
+}
+//
+// ClassificationLevel
+// enumeration of available classification levels for the system
+//
+enum ClassificationLevel {
+  CLASSIFICATION_UNKNOWN = 0; // I don't know, and neither do you, so stop pretending you know
+  CLASSIFICATION_UNCLASSIFIED = 1;
+  CLASSIFICATION_SECRET = 2;
+  CLASSIFICATION_TOP_SECRET = 3;
+}
+
+//
+// available device types in the system
+// integer maps to DeviceTypeEnum in XJC (DON CONFIG)
+// TODO: [AFMC2-7355] only one definition for this
+//
+enum DeviceTypeEnum {
+  DEVICE_TYPE_GENERIC = 0;
+  DEVICE_TYPE_CROWS = 1;
+  DEVICE_TYPE_CTC_RADAR = 2;
+  DEVICE_TYPE_DISCOV_AIR = 3;
+  DEVICE_TYPE_DUKE_V_4 = 4;
+  DEVICE_TYPE_DUKE_V_5 = 5;
+  DEVICE_TYPE_ELK_7012_D = 6;
+  DEVICE_TYPE_MARS_K = 7;
+  DEVICE_TYPE_MINI_POP = 8;
+  DEVICE_TYPE_CTC = 9;
+  DEVICE_TYPE_NIGHTHAWK = 10;
+  DEVICE_TYPE_MADS_K = 11;
+  DEVICE_TYPE_GYROCAM = 12;
+  DEVICE_TYPE_WISP = 13;
+  DEVICE_TYPE_NINJA = 14;
+  DEVICE_TYPE_NINJA_HUB = 15;
+  DEVICE_TYPE_CDLIM = 16;
+  DEVICE_TYPE_JREAP = 17;
+  DEVICE_TYPE_COYOTE_PTU = 18;
+  DEVICE_TYPE_COYOTE_LAUNCHER = 19;
+  DEVICE_TYPE_ASTROHAVEN = 20;
+  DEVICE_TYPE_THERMOMETER = 21;
+  DEVICE_TYPE_ASCENTVISION = 22;
+  DEVICE_TYPE_NIGHTHAWK_3 = 23;
+  DEVICE_TYPE_GENERIC_DEVICE = 24;
+  DEVICE_TYPE_UNKNOWN = 25;
+}
+//
+// DeviceConfiguration
+// Top level configuration message for devices configured within the system. These are
+// values that are defined in configuration and will not change over time with
+// device status.
+//
+message DeviceConfiguration {
+  string deviceName = 1; // User-friendly name for this device
+  string deviceId = 2; // The unique id for this device. This is currently the same as name in DON.
+  string deviceOwner = 3; // The device Owner
+  string description = 4; // Field for holding a human-friendly description of the device
+  DeviceTypeEnum deviceType = 5; // The broad device type for this thing
+  DeviceVisualsConfiguration visualConfig = 6; // Options for visually displaying a device
+  DeviceSpatialFactors spatial = 7; // Spatial info for a device like orientation
+  DeviceCapabilitiesConfiguration capabilities = 8; // The capabilities a device supports
+  repeated PropertyInfo properties = 9; // additional configuration properties for this device (as needed) (deprecated)
+  SubDeviceInfo subDeviceDetails = 10; // details IF this is a sub-device
+  repeated DeviceConfiguration subDevices = 11; // if this device has sub-devices, those child devices
+  repeated DeviceTransportInfo transports = 12; // the URL connections for this device
+  DeviceHandlerType handlerType = 13; // The message protocol the device uses
+  bool compressMessages = 14; //Flag for determining if the messages are compressed for this device.
+}
+
+enum DeviceHandlerType {
+  HANDLER_UNKNOWN = 0[(description) = "Unknown"]; // I don't know, and neither do you, so stop pretending you know
+  HANDLER_GENERIC_TCUT_3_0 = 1[(description) = "Generic TCUT 3.0"]; // The Device is a Generic Don TCUT 3.0 Device
+  HANDLER_SDK = 2[(description) = "SDK"]; // The Device is an SDK Device
+  HANDLER_LEGACY = 3[(description) = "Legacy"]; // The Device is a legacy Don Device
+}
+
+//
+// SubDeviceInfo
+// The specific fields for a device that is a sub-device - ie it has a parent device
+//
+message SubDeviceInfo{
+  string parentId = 1; // device id for parent
+  bool parentAggregatesCapabilities = 2; //boolean to control whether this devices capabilities will be displayed under the parent on the HMI
+}
+
+//
+// DeviceVisualsConfiguration
+// Contains info about how the device should be displayed
+//
+message DeviceVisualsConfiguration {
+  string symbolCode = 1; // 15 character MIL-STD 2525C representing a symbol to display the symbol.
+  bool displayOnClient = 2; // Controls displaying on the client
+}
+
+//
+// DeviceCapabilitiesConfiguration
+// All of the capabilities a device supports like supported commands.
+//
+message DeviceCapabilitiesConfiguration {
+  bool sendsTracks = 1; //does the device send tracks
+  bool receivesThreats = 2; //does the device receive threats
+  SlewCapabilitiesConfiguration slewCapabilities = 3; // Support for slew commands
+  CameraCapabilitiesConfiguration cameraCapabilities = 4; // Support for video streams/camera commands
+  EwCapabilityConfiguration ewCapabilities = 5; // Support for EW commands
+  GenericCapabilityConfiguration fireCapabilities = 6; // Capability describing support for fire command.
+  GenericCapabilityConfiguration energizeCapabilities = 7; // Think laser commands
+  GenericCapabilityConfiguration deployCapabilities = 8; // Support for deploy. This one might vary between devices.
+  ProbeCapabilityConfiguration probeCapabilities = 9; // Capabilities for devices probing a threat/location
+  AffiliateCapabilityConfiguration affiliateCapabilities = 10; // Capabilities for setting target affiliation
+  google.protobuf.StringValue collocatedCamera = 11; //Name of a possible co-located camera
+  int32 commandRate = 12; //The rate at which to send messages in messages / second
+  bool registrationRequired = 13; // The flag for if registration command is required for the device
+  bool forwardToFuzer = 14; //Do we sent the tracts to the CTC
+}
+
+//
+// CameraCapabilitiesConfiguration
+// The camera capabilities of a device.
+// NOTE: A device can have 0-N cameras and each camera can have 0-M video streams.
+//
+message CameraCapabilitiesConfiguration {
+  repeated GenericCameraConfiguration cameras = 1; //Object containing info about the different camera that make up the device.
+}
+
+//
+// GenericCameraConfiguration
+// Info about a camera attached to a device such as video stream info and accepted commands.
+//
+message GenericCameraConfiguration {
+  string cameraName = 1; //A name associated with this camera. Useful for commanding a specific camera on a device.
+  CameraTypeEnum cameraType = 2; //The type of camera such as EO or IR
+  bool acceptFocus = 3; //Whether or not this camera accepts focus commands.
+  bool acceptZoom = 4; //Whether or not this camera accepts zoom commands.
+  repeated CameraVideoConfiguration videos = 5; //Not all cameras have video and some might have more than one stream being output.
+}
+
+//
+// CameraVideoConfiguration
+// Info about a video stream associated with a camera such as the name and stream url.
+//
+message CameraVideoConfiguration {
+  string displayName = 1; // A user-friendly name associated with the stream.
+  VideoFormatEnum videoType = 2;  // type of video produced
+  VideoTransportInfo url = 3; //A URL for the video feed.
+  bool record = 4; //Should this be recorded
+  bool display = 5; //Should this be displayed
+}
+
+//
+// CameraTypeEnum
+// The type of camera attached to a device.
+//
+enum CameraTypeEnum {
+  CAMERA_TYPE_DEFAULT = 0; // I don't know, and neither do you, so stop pretending you know
+  CAMERA_TYPE_EO = 1; // EO camera
+  CAMERA_TYPE_IR = 2; // IR camera
+}
+
+//
+// VideoFormatEnum
+// The type of video a given camera produces.
+//
+enum VideoFormatEnum {
+  VIDEO_FORMAT_DEFAULT = 0; // I don't know, and neither do you, so stop pretending you know
+  VIDEO_FORMAT_MPEG_TS = 1;
+  VIDEO_FORMAT_H_264 = 2;
+  VIDEO_FORMAT_H_265 = 3;
+}
+
+//
+// SlewCapabilitiesConfiguration
+// The slew capabilities of a device. Details about what slew commands a device can perform.
+//
+message SlewCapabilitiesConfiguration {
+  google.protobuf.StringValue displayName = 1; // User-friendly name for SLEW command on a UI
+  bool canSlewToPoint = 2; // Ability to slew to a geo-spatial position on a map
+  bool canSlewToAngle = 3; // Ability to slew to a specific angle relative to the position of the device
+  bool canSlewToCue = 4; // Ability to cue the camera to a target and actively track that target
+  double manualSlewSensitivity = 5; // Determines the rate at which the camera slews with the handheld controller
+  VariableSlewRate variableSlewRate = 6; // Message containing the values describing variable slew rates.
+}
+
+//
+// VariableSlewRate
+// Message containing the values describing variable slew rates.
+//
+message VariableSlewRate{
+  bool supportsVarSlewRates = 1;// does the device support variable support rates
+  double azimuth = 2; // Value between 0-360
+  double elevation = 3; // Value between 0-90
+}
+
+//
+// GenericCapabilityConfiguration
+// Info about some generic capability such as firing/EW/energize
+//
+message GenericCapabilityConfiguration {
+  google.protobuf.StringValue displayName = 1; // User-friendly name
+  bool canPerformOnDevice = 2; // Whether or not the device can be performed directly on a device
+  bool canPerformOnThreat = 3; // Whether or not this action can be performed on a threat.
+  bool supported = 4; //Does the device support this command
+}
+
+//
+// ProbeCapabilityConfiguration
+// Probe support. This is a pay-close-attention-over-there command
+//
+message ProbeCapabilityConfiguration {
+  google.protobuf.StringValue displayName = 1; // User-friendly name
+  bool canProbeCued = 2; // Whether or not it can probe a threat
+  bool canProbeDirectional = 3; // Whether or not it can probe a specific direction.
+}
+
+//
+// AffiliateCapabilityConfiguration
+// Affiliate support. This is ability to assign affiliation to a target
+//
+message AffiliateCapabilityConfiguration {
+  bool supportsAffiliate = 1; // does it support affiliate
+}
+
+//
+// EwCapabilityConfiguration
+// Specific details for the EW countering capability for a device
+//
+message EwCapabilityConfiguration {
+  google.protobuf.StringValue displayName = 1; // The name of the action category to be preformed. This will appear on the WOD
+  bool supportsJamAll = 2; // if this device should be sent a JAM command when JAM_ALL is run
+  bool canPerformOnDevice = 3; // Whether or not the device can be performed directly on a device
+  bool canPerformOnThreat = 4; // Whether or not this action can be performed on a threat.
+  repeated EwOption options = 5; // Additional selection options such as jamming frequency these are the items that appear on the WOD.
+  bool supported = 6; //Does the device support this command
+}
+
+//
+// EwOption
+// Details for one available EW action on a device
+//
+message EwOption {
+  string optionName = 1; // the name for this EW option
+  bool isJamAllOption = 2; // if this is the option that should be used for JAM_ALL
+}
+
+//
+// DeviceSpatialFactors
+// Spatial data for a device, as a child of device configuration/status. This contains active position information for this
+// device over time.
+// Child of DeviceStatus and DeviceConfiguration
+//
+message DeviceSpatialFactors {
+  CoordinateLla emplacement = 1; // The location of the device. Altitude should only be in HAE.
+  Orientation orientation = 2; // The direction a device is facing.
+  CoordinateLla referencePosition = 3; // The home position for a device.
+  repeated CoverageSector coverageSectors = 4; // The list of range fans/rings supported by the device.
+  SpatialFactorsStatusUsage spatialFactorsStatusUsage = 5; // Collection of flags for the usages of various spacial factors in status messages
+}
+
+//
+//Collection of flags for the usages of various spacial factors in status messages
+//
+message SpatialFactorsStatusUsage{
+  bool IgnoreStatusCoverageSectors = 1; //Flag to determine whether to use the configured vs reported Coverage Sectors
+  bool IgnoreStatusOrientation = 2; //Flag to determine whether to use the configured vs reported Orientation
+  bool IgnoreStatusEmplacement = 3; //Flag to determine whether to use the configured vs reported Emplacement
+  bool IgnoreStatusReferencePosition = 4; //Flag to determine whether to use the configured vs reported Reference Position
+}
+
+//
+// DeviceTransportInfo
+// Transport details for a device
+//
+message DeviceTransportInfo {
+  DeviceTransportType type = 1; // the kind of transport this is for our device
+  TransportConfiguration configuration = 2; //the specific details of the transports network type, destination, and port.
+}
+
+//
+// VideoTransportInfo
+// Transport details for a device
+//
+message VideoTransportInfo {
+  TransportConfiguration configuration = 1; //the specific details of the transports network type, destination, and port.
+  string path = 2; // the path to record the video to
+}
+
+//
+// DeviceTransportType
+// The kind of data this transport is supporting for a device
+//
+enum DeviceTransportType {
+  TRANSPORT_TYPE_UNKNOWN = 0; // I don't know, and neither do you, so stop pretending you know
+  TRANSPORT_TYPE_COMMAND = 1; // a command transport; receives inbound commands and directives
+  TRANSPORT_TYPE_RESPONSE = 2; // a response transport; sends device status and tracks
+  TRANSPORT_TYPE_CORRELATOR = 3; // forwarding transport to a correlator
+  TRANSPORT_TYPE_THREAT = 4; // a threat transport; receives inbound threats
+}

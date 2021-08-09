@@ -1,0 +1,341 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/descriptor.proto";
+import "Protos/Common.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "ThreatsProto";
+
+//
+// ThreatInfo
+// Details for one threat propagated through the system
+//
+message ThreatInfo {
+	int64 threatId = 1; // Unique (temporarily) ID for this threat
+	string sourceSystem = 2; // the source system that generated this threat
+	string threatName = 3; // A friendly name for this threat
+	int32 priority = 4; // Priority rating for this threat (1-20, 1 == highest)
+	google.protobuf.StringValue description = 5; // optional descriptive field
+	TargetAffiliation affiliation = 6; // Assign affiliation for this threat. Could be machine or human assigned
+	CoordinateLla location = 7; // optional 3D position for this threat
+	CoordinateLla predictedLocation = 8; // optional predicted forward position for this threat
+	int64 detectionTime = 9; // time of detection, in milliseconds since epoch
+	bool isEndThreat = 10; // if this marks the loss/end of the given threat id
+	HeadingValue heading = 12; // optional heading for threat
+	google.protobuf.DoubleValue speed = 13; // optional speed of this threat in meters/second
+	google.protobuf.Int32Value eta = 14; // optional time in seconds until threshold crossing for this threat
+	google.protobuf.StringValue groupId = 15; // optional group id for detection systems that provide multiple threats per detection
+	google.protobuf.DoubleValue signalConfidence = 16; // optional signal confidence, as a value from 0 to 1
+
+	// details for this threat based on type or source
+	ThreatSourceType sourceTypes = 17; // for specialized device detections, the type of detecting device
+	OverallClassType overallClassType = 18; // a rollup of classification information for this threat from child track information
+	NinjaThreatDetails ninja = 19; // if the detecting device is a Ninja, rollup information from the Ninja tracks
+
+	google.protobuf.StringValue symbolCode = 20; // optional symbolcode by which this threat should be represented
+
+	// tracks within our threat
+	repeated TrackInfo tracks = 21; // detail about the tracks that make up this threat
+}
+
+//
+// ThreatSourceType
+// if this threat has special / specific characteristics based on source
+//
+message ThreatSourceType {
+	bool isNinjaThreat = 1; // is this a Ninja-generated threat?
+	bool isCoyoteInterceptorThreat = 2; // is this a Coyote interceptor?
+	bool isCoyoteTargetThreat = 3; // is this a Coyote target?
+}
+
+//
+// NinjaThreatDetails
+// if this threat is from a Ninja device then there are special additional capabilities defined within
+//
+message NinjaThreatDetails {
+	google.protobuf.StringValue macAddress = 1; // MAC address for the drone
+	google.protobuf.StringValue overallSignalType = 2; // A rollup type for this threat from the underlying tracks.
+	google.protobuf.StringValue droneModel = 3; // the detected type of drone
+	repeated NinjaThreatCountermeasure countermeasures = 4; // the available set of countermeasure for this drone
+}
+
+//
+// OverallClassType
+// Rollup classification type for a threat from the child tracks. This is basically the type
+// of object we think this detection represents.
+//
+enum OverallClassType {
+	None = 0;
+	Aircraft = 1;
+	Bird = 2;
+	GroundStation = 3;
+	GroundVehicle = 4;
+	Pending = 5;
+	Projectile = 6;
+	UAS = 7;
+	Unknown = 8;
+}
+
+//
+// NinjaThreatCountermeasure
+// Details for 1 Ninja device countermeasure. These are repeated within the
+// NinjaThreatDetails class, one for each available countermeasure from the
+// Ninja device.
+//
+message NinjaThreatCountermeasure {
+	string deviceId = 1; // the device that has been detected
+	string countermeasure = 2; // the countermeasure available on the Ninja device
+	NinjaCountermeasureState state = 3; // whether this countermeasure is available for the given threat/device
+}
+
+//
+// NinjaCountermeasureState
+// state for a single Ninja device countermeasure
+//
+enum NinjaCountermeasureState {
+	Unusable = 0;
+	Available = 1;
+	Active = 2;
+}
+
+//
+// TrackInfo
+// Details for one track within the system. This can be a standalone track coming from a
+// device, and it also is a repeated field within threats.
+//
+message TrackInfo {
+	int64 trackId = 1; // id used to tie the detection information to a threat
+	int64 timestamp = 2; // the time the information was generated (milliseconds since epoch)
+	string sourceSystem = 3; // id of the system/application that generated the information
+	string sourceDevice = 4; // id of the actual device that generated the information
+	google.protobuf.StringValue symbolCode = 5; // an associated symbol code for this track (if provided)
+	TargetAffiliation affiliation = 6; // track affiliation (if provided)
+	TrackSystemType trackType = 7; // a categorization of the type of system this track is coming from
+	bool isBegin = 8; // Whether this is the start of this track (first detection) or not
+	bool isEnd = 9; // Whether this is the end of this track or not.
+
+	TrackSpatialInfo spatial = 10; //  positional information for this track
+	LineOfBearing lob = 11; // defines a relative line of bearing
+	TrackBallisticSolution ballistics = 12; // Detailed information for a ballistic solution for this track.
+	TrackClassification classification = 13; // classification information about the track
+	TrackAcousticQualities acoustic = 14; // acoustic qualities for this track
+	TrackRfQualities rf = 15; // RF qualities for this track
+
+	// specific business logic and parsing from TrackClassification values
+	// NOTE: singular because only one is set for a track
+	TrackDiscriminationFeature feature = 16;
+}
+
+//
+// TrackSystemType enum
+// Represents the rough type/category of device this track came from
+//
+enum TrackSystemType {
+  TRACK_SYSTEM_OTHER = 0[(description) = "Other"];
+  TRACK_SYSTEM_ACOUSTIC = 1[(description) = "Acoustic"];
+  TRACK_SYSTEM_RADAR = 2[(description) = "Radar"];
+  TRACK_SYSTEM_EW = 3[(description) = "EW"];
+  TRACK_SYSTEM_CAMERA = 4[(description) = "Camera"];
+  TRACK_SYSTEM_THREAT = 5[(description) = "Threat"];
+}
+
+//
+// ClassificationType
+// classification details for a track or threat
+//
+enum ClassificationType {
+  CLASS_TYPE_NONE = 0[(description) = "None"];
+  CLASS_TYPE_AIRCRAFT = 1[(description) = "Aircraft"];
+  CLASS_TYPE_BIRD = 2[(description) = "Bird"];
+  CLASS_TYPE_GROUND_STATION = 3[(description) = "Ground Station"];
+  CLASS_TYPE_GROUND_VEHICLE = 4[(description) = "Ground Vehicle"];
+  CLASS_TYPE_PENDING = 5[(description) = "Pending"];
+  CLASS_TYPE_PROJECTILE = 6[(description) = "Projectile"];
+  CLASS_TYPE_UAS = 7[(description) = "UAS"];
+  CLASS_TYPE_UNKNOWN = 8[(description) = "Unknown"];
+}
+
+//
+// TrackDiscriminationFeature
+// This class contains specific evaluations and business logic for information
+// contained within a repeated track discrimination value.
+//
+message TrackDiscriminationFeature {
+	oneof data {
+		TrackCountermeasuresFeature countermeasures = 1;
+		TrackCoyoteFeature coyote = 2;
+		TrackImportanceFeature importance = 3;
+	}
+}
+
+//
+// TrackCoyoteFeatureType
+// The coyote specific track type
+//
+enum TrackCoyoteFeatureType {
+	COYOTE_FEATURE_UNKNOWN = 0;
+	COYOTE_FEATURE_INTERCEPTOR = 1;
+	COYOTE_FEATURE_TARGET = 2;
+}
+
+//
+// CoyoteFeature
+// string will be one of these values
+// COYOTE_INTERCEPTOR_DISCRIMINATION = "Coyote Interceptor";
+// COYOTE_TARGET_DISCRIMINATION = "Coyote Target";
+//
+message TrackCoyoteFeature {
+	string trackDesignator = 1;
+	TrackCoyoteFeatureType trackType = 2;
+}
+
+//
+// TrackImportanceFeature
+// if feature is labeled "Importance" then take the confidence value and assign it as importance/quality level.
+// For WISP this determines if we should use this track or not. Also known as RED/ORANGE
+// TRACK_IMPORTANCE = "Importance";
+message TrackImportanceFeature {
+	double importance = 1; // the importance value (0-1)
+}
+
+
+//
+// TrackCountermeasureState
+// The active state for one countermeasure for a given drone
+//
+enum TrackCountermeasureState {
+	CM_STATE_UNKNOWN = 0;
+	CM_STATE_UNAVAILABLE = 1;
+	CM_STATE_AVAILABLE = 2;
+	CM_STATE_ACTIVE = 3;
+}
+
+//
+// TrackCountermeasuresFeature
+// A collection of TrackCountermeasure objects. Used for NINJA countermeasure details.
+//
+message TrackCountermeasuresFeature {
+	string droneModel = 1; // rollup drone model. should be the same for all countermeasure definitions
+	// if this track source can perform countermeasures, the possible countermeasures and state
+	repeated TrackCountermeasure countermeasures = 2;
+}
+
+//
+// TrackCountermeasure
+// details for one countermeasure against a track and the state of that countermeasure
+//
+message TrackCountermeasure {
+	string droneModel = 1;
+	string countermeasure = 2;
+	TrackCountermeasureState state = 3;
+}
+
+//
+// TrackClassification
+// Classification information about a target
+//
+message TrackClassification {
+	ClassificationType type = 1; // The overall Classification of the track, if available.
+	google.protobuf.BoolValue isManMade = 2; // Whether the track is determined to be man-made (true) or biological (false). Absence indicates that this is unknown.
+	google.protobuf.DoubleValue confidence = 3; // 0 - 1  The confidence of overall_type.
+	repeated TrackDiscrimination discriminations = 4; // The current discriminations/types for this track.
+}
+
+//
+// TrackDiscrimination
+// A discriminating element of a track classification
+//
+message TrackDiscrimination {
+	google.protobuf.DoubleValue confidence = 1; // 0 - 1  The confidence of this one discrimination
+	google.protobuf.StringValue feature = 2; // The name of the feature for which this is a discrimination.
+}
+
+//
+// TrackBallisticSolution
+// Detailed information for a ballistic solution for this track.
+//
+message TrackBallisticSolution {
+	bool isFinal = 1; // Identifies this as the final solution.
+	TrackBallisticPoint impact = 2; // point of impact
+	TrackBallisticPoint origin = 3; // point of origin
+}
+
+//
+// TrackBallisticPoint
+// POI (Point Of Impact) or POO (Point of Origin) position for a ballistic solution
+//
+message TrackBallisticPoint {
+	CoordinateThreeD point = 1; // a ballistic position
+	CovarianceMatrix error = 2; // error for this position
+}
+
+
+//
+// TrackSpatialInfo
+// spatial information for a track
+//
+message TrackSpatialInfo {
+	CoordinateThreeD position = 1; // track position in LLA or ECEF
+	Vector3 velocity = 2; // meters/second in X/Y/Z
+	CovarianceMatrix positionCovariance = 3; // meters^2 in xx/xy/xz/yy/yz/zz
+}
+
+//
+// TrackRfQualities
+// details for one RF track
+// NOTE from DON track message, not being referenced right now
+//
+message TrackRfQualities {
+	string signalType = 1; // (xs:string | required) - A string indicating what kind of EW signal is present.
+	google.protobuf.BoolValue approaching = 2; //  (xs:boolean | optional) - Whether the detection seems to be approaching the sensor, true for approaching, false for receding, unknown if not present
+	google.protobuf.DoubleValue bandwidth = 3; // (xs:double | optional) - Bandwidth of the track (Units: MHz)
+	google.protobuf.Int32Value channelCount = 4; // (xs:unsignedShort | optional) - Number of frequency channels this track is operating on (Units: none)
+	google.protobuf.DoubleValue density = 5; // (percentage | optional) - Density of the track (Units: Percentage 0.0-1.0)
+	google.protobuf.Int32Value detectionCount = 6; // (xs:unsignedShort | optional) - Number of detections from this track (Units: none)
+	google.protobuf.DoubleValue frequency = 7; // (xs:double | optional) - Frequency of the track (Units: MHz)
+	google.protobuf.Int32Value groupId = 8; // (xs:unsignedShort | optional) - Indicates the EW threat to which this track belongs.
+	google.protobuf.StringValue macAddress = 9; // (xs:string | optional) - MAC Address of the track in XX:XX:XX:XX:XX:XX format
+	google.protobuf.DoubleValue noiseStrength = 10; // (xs:float | optional) - Indicates noise power level (Units: dB)
+	google.protobuf.DoubleValue pulseWidth = 11; // (xs:float | optional) - The pulse width of the signal (Units: milliseconds)
+	google.protobuf.DoubleValue pri = 13; // (xs:float | optional) - The pulse rate interval of the signal (Units: milliseconds)
+	google.protobuf.DoubleValue signalConfidence = 14; // (confidence | optional) - Indicates the confidence of the signal estimate (Units: Percentage of confidence)
+	google.protobuf.DoubleValue signalStrength = 15; // (xs:float | optional) - Indicates signal power level (Units: dB)
+	google.protobuf.StringValue video = 16; // (xs:string | optional) - Indicates the system is providing a stream for the target’s video feed, if available.
+}
+
+//
+// TrackAcousticQualities
+// details for one acoustic track
+// NOTE from DON track message, not being referenced right now
+//
+message TrackAcousticQualities {
+	string signalType = 1; // A string indicating what kind of audio signal is present
+	google.protobuf.DoubleValue signalConfidence = 2; // 0 - 1 Indicates the Confidence of the signal estimate
+	google.protobuf.DoubleValue absoluteAmplitude = 3; // Absolute amplitude of the track (Units: dB)
+	google.protobuf.DoubleValue relativeAmplitude = 4; // Relative amplitude of the track (Units: dB)
+	google.protobuf.DoubleValue frequency = 5; //  Frequency of the track (Units: Hz)
+	google.protobuf.DoubleValue fundamentalFrequency = 6; //  fundamental Frequency of the track (Units: Hz)
+}

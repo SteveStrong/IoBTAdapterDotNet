@@ -1,0 +1,393 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/descriptor.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "CommonProto";
+
+//
+// VersionInfo
+// version details for a API service
+//
+message VersionInfo {
+    string version = 1;
+    string buildDate = 2;
+}
+
+//
+// ResponseInfo
+// support for a response back for a specific request. with success/failure details
+//
+message ResponseInfo {
+    string requestId = 1; // an id that relates the request to this response
+    bool success    = 2; // if the request succeeded or not
+    string details  = 3; // details about this success or failure
+}
+
+//
+// CoordinateThreeD
+// A 3d position in either ECEF or LLA
+//
+message CoordinateThreeD {
+    oneof data {
+        CoordinateLla lla = 1;
+        CoordinateEcef ecef = 2;
+    }
+}
+
+//
+// CoordinateLla
+// A 3d position in lat/lon/alt (LLA)
+// BITWISE matches DON.CoordinateMsg
+//
+message CoordinateLla {
+    double latitude = 1;
+    double longitude = 2;
+    double altitude = 3; // HAE
+}
+
+//
+// Orientation
+// An AZ/EL pair
+//
+message Orientation {
+    float azimuth = 1; //A value of [0, 360]
+    float elevation = 2; //A value of [-90, 90]
+}
+
+//
+// CoordinatePolar
+// A az/el position.
+// NOT bitwise compatible with DON.PolarMsg
+//
+message CoordinatePolar {
+    Orientation actual = 1;
+    Orientation starting = 2;
+    Orientation ending = 3;
+    CoordinateLla referencePoint = 4;
+}
+
+//
+// CoordinateEcef
+// A 3d position (ECEF). All measurements in meters.
+// BITWISE matches DON.EcefMsg
+//
+message CoordinateEcef {
+    double X = 1;
+    double Y = 2;
+    double Z = 3;
+}
+
+//
+// Vector3
+// A 3D vector
+//
+message Vector3 {
+    double X = 1;
+    double Y = 2;
+    double Z = 3;
+}
+
+//
+// LineOfBearing
+// This type defines a relative line of bearing.
+//
+message LineOfBearing {
+    double azimuth = 1; // Estimated azimuth angle of the track (Units: degrees).
+    google.protobuf.DoubleValue elevation = 2; //  Estimated elevation angle of the track (Units: degrees)
+    google.protobuf.DoubleValue azimuthError = 3; // Error of the azimuth angle estimate (Units: degrees).
+    google.protobuf.DoubleValue elevationError = 4; // Error of the elevation angle estimate (Units: degrees).
+    google.protobuf.DoubleValue minRange = 5; // Maximum Estimated Range of LOB (Units: meters)
+    google.protobuf.DoubleValue maxRange = 6; // Minimum Estimated Range of LOB (Units: meters)
+    CoordinateThreeD originPosition = 7; // origin point for LOB - this would generally be the device position
+}
+
+//
+// CovarianceMatrix
+// A covariance matrix
+//
+message CovarianceMatrix {
+    double XX = 1;
+    double XY = 2;
+    double XZ = 3;
+    double YY = 4;
+    double YZ = 5;
+    double ZZ = 6;
+}
+
+//
+// HeadingValueType
+// The type of heading a heading value is
+//
+enum HeadingValueType {
+    PolarHeading = 0;
+    VectorHeading = 1;
+}
+
+//
+// HeadingValue
+// One heading value
+//
+message HeadingValue {
+    HeadingValueType type = 1;
+    oneof data {
+        google.protobuf.Int32Value polar = 2;
+        Vector3 vector = 3;
+    }
+}
+
+//
+// TargetingType enum
+// A generic representation of an identified target - which could be a track or a threat.
+// Used within TargetIdentifier message.
+//
+enum TargetingType {
+    TARGET_UNKNOWN = 0;
+    TARGET_THREAT = 1;
+    TARGET_TRACK = 2;
+}
+
+//
+// TargetIdentifier
+// The ability to identify the target of an action, when that target could be a threat
+// or a track.
+//
+message TargetIdentifier {
+    TargetingType type = 1; // targeting type
+    int32 targetId = 2; // target identifier
+    string sourceSystem = 3; // source of the target identification
+}
+
+//
+// TransportProtocol
+// available transport protocols
+//
+enum TransportProtocol {
+    TRANSPORT_PROTOCOL_UNKNOWN = 0;
+    TRANSPORT_PROTOCOL_UDP = 1;
+    TRANSPORT_PROTOCOL_TCP = 2;
+    TRANSPORT_PROTOCOL_RPC = 3;
+    TRANSPORT_PROTOCOL_HTTP = 4;
+    TRANSPORT_PROTOCOL_RTSP = 5;
+}
+
+//
+// PropertyInfo
+// generic configuration properties
+// BITWISE matches DON.PropertyMsg
+//
+message PropertyInfo {
+    string name = 1;
+    string label = 2;
+    string value = 3;
+    string type = 4;
+    double minimum = 5;
+    double maximum = 6;
+    string units = 7;
+    int32 maxLength = 8;
+    double interval = 9;
+    string defaultIndex = 10;
+    string hint = 11;
+}
+
+//
+// CoverageSector
+// Message for representing one of a devices coverage sectors (range fan/ring).
+// A start/stop azimuth of 0/360 represents a device with 360 FOV.
+// A start/stop az of 355/5 would be a valid 10 degree FOV centered at 0 degrees.
+//  If a device doesn't have a start/stop azimuth, then start and stop should be set to 360 for a range fan to be visible.
+// startElevation should be less than or equal to endElevation
+// If a device doesn't have a start/stop elevation, then start and stop should be set to -90/90
+//
+message CoverageSector {
+    double startRange = 1; //The start of effective range of the device. Useful for devices that can only see objects past a certain range.
+    double endRange = 2; //The end of the effective range of the device.
+    Orientation starting = 3; // starting az/el  [0, 360] for AZ, [-90, 90] for EL
+    Orientation ending = 4; // ending az/el  [0, 360] for AZ, [startElevation, 90] for EL
+}
+
+//
+// ARGBColor
+// Color is encoded such that
+// int color = (alpha & 0xff) << 24 | (red & 0xff) << 16 | (green & 0xff) << 8 | (blue & 0xff);
+//
+message ARGBColor {
+    uint32 a = 1; // alpha, 0-255
+    uint32 r = 2; // red, 0-255
+    uint32 g = 3; // green, 0-255
+    uint32 b = 4; // blue, 0-255
+}
+
+//
+// SystemChangeType
+// This type defines the available change types that can occur on a set of monitored
+// data objects
+//
+enum SystemChangeType {
+    CHANGE_TYPE_UNKNOWN = 0; // unknown / error
+    CHANGE_TYPE_INITIAL = 1; // first-time transmission or request for items; no change in status
+    CHANGE_TYPE_ADDED = 2; // a data object has been added to a collection
+    CHANGE_TYPE_MODIFIED = 3; // an existing data object has been modified
+    CHANGE_TYPE_UNSHARED = 4; // an existing data object has changed its group membership and has become unshared
+    CHANGE_TYPE_DELETED = 5; // an existing data object has been deleted
+}
+
+extend google.protobuf.EnumValueOptions{
+  string description = 55225;
+}
+
+//
+// TargetAffiliation
+// The 2525-C standard affiliation associated with a threat/track/target.
+//
+enum TargetAffiliation {
+    AFF_PENDING = 0[(description)="Pending"];
+    AFF_UNKNOWN = 1[(description)="Unknown"];
+    AFF_ASSUMED_FRIEND = 2[(description)="Assumed Friend"];
+    AFF_FRIEND = 3[(description)="Friend"];
+    AFF_NEUTRAL = 4[(description)="Neutral"];
+    AFF_SUSPECT = 5[(description)="Suspect"];
+    AFF_HOSTILE = 6[(description)="Hostile"];
+    // BOUNDARY - above match order for TCUT3 mil.boss.protocols.tcut.jaxb.V3_0.Affiliation
+    AFF_EXERCISE_PENDING = 7[(description)="Exercise Pending"];
+    AFF_EXERCISE_UNKNOWN = 8[(description)="Exercise Unknown"];
+    AFF_EXERCISE_ASSUMED_FRIEND = 9[(description)="Exercise Assumed Friend"];
+    AFF_EXERCISE_FRIEND = 10[(description)="Exercise Friend"];
+    AFF_EXERCISE_NEUTRAL = 11[(description)="Exercise Neutral"];
+    AFF_JOKER = 12[(description)="Joker"];
+    AFF_FAKER = 13[(description)="Faker"];
+    // BOUNDARY - matches order for mil.boss.infrastructure.marc.Affiliation
+}
+
+//
+// OperationalStatus
+// The operational status for one device/service/client
+//
+enum OperationalStatus {
+    STATUS_UNKNOWN = 0; // Unknown / not set
+    STATUS_OPERATIONAL = 1; // Connected and Operational
+    STATUS_NONOPERATIONAL = 2; // Connected and Nonoperational
+    STATUS_DISCONNECTED = 3; // Disconnected, not communicating
+    STATUS_DEGRADED = 4; // Operational but in a degraded state
+}
+
+//
+// ShapeType enumeration
+// Enumeration of available drawing shapes
+//
+enum ShapeType {
+  SHAPE_UNKNOWN = 0; // not set / error
+  SHAPE_CIRCLE = 1;
+  SHAPE_POLYGON = 2;
+  SHAPE_POLYLINE = 3;
+  SHAPE_TEXT = 4;
+  SHAPE_POINT_MARKER = 5;
+}
+
+//
+// ShapeFillAttributes
+// Details on how to draw a closed shape
+//
+message ShapeFillAttributes {
+  ARGBColor fillColor = 1; // fill color
+  ARGBColor lineColor = 2; // line color
+  uint32 lineWidth = 3; // line width
+}
+
+//
+// LineAttributes
+// Details on how to draw a line
+//
+message LineAttributes {
+  ARGBColor lineColor = 1; // line color
+  uint32 lineWidth = 2; // line width
+}
+
+//
+// TextAttributes
+// Details on how to draw text
+//
+message TextAttributes {
+  ARGBColor textColor = 1; // text color
+  string fontFamily = 2; // font to use
+  uint32 fontSize = 3; // font size, in points
+}
+
+//
+// PolygonShape
+// A basic generic closed polygon shape.
+//
+message PolygonShape {
+  ShapeFillAttributes attrs = 1; // drawing attributes
+  repeated CoordinateLla coordinates = 2; // vertex points. do not repeat first point - this will happen automatically
+}
+
+//
+// PolyLineShape
+// A basic generic multi-segmented line shape.
+//
+message PolyLineShape {
+  LineAttributes attrs = 1; // drawing attributes
+  repeated CoordinateLla coordinates = 2; // vertex points
+}
+
+//
+// TextShape
+// A basic generic text shape.
+//
+message TextShape {
+  TextAttributes attrs = 1; // drawing attributes
+  string text = 2; // the text to draw
+  CoordinateLla origin = 3; // bottom-left for text positioning
+}
+
+//
+// CircleShape
+// A basic generic circle.
+//
+message CircleShape {
+  ShapeFillAttributes attrs = 1; // drawing attributes
+  CoordinateLla origin = 2; // center point for circle
+  double radius = 3; // radius of the circle, in meters
+}
+
+//
+// PointMarkerShape
+// A basic generic marker.
+//
+message PointMarkerShape {
+  ARGBColor fillColor = 1; // fill color
+  CoordinateLla origin = 2; // center point for a point marker shape
+  double scalingFactor = 3; // scalingFactor of the point
+}
+
+//
+// TransportConfiguration
+// Transport details for a device
+//
+message TransportConfiguration {
+  TransportProtocol protocol = 1; // network protocol being used
+  string address = 2; // ip address
+  int32 port = 3; // network port
+}

@@ -1,0 +1,106 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+import "Protos/Common.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "HmiFilterProto";
+
+//
+// ClusivityType
+// Filter clusivity types available for filters
+//
+enum ClusivityType{
+  CLUSIVITY_TYPE_UNKNOWN = 0;
+  CLUSIVITY_TYPE_INCLUSIVE = 1;
+  CLUSIVITY_TYPE_EXCLUSIVE = 2;
+}
+
+//
+// SpeedFilter
+// Defines the properties for a speed filter
+//
+message SpeedFilter{
+  int32 minSpeed = 1; // Minimum speed of a threat for display
+  int32 maxSpeed = 2; // Maximum speed of a threat for display
+}
+
+//
+// AltitudeFilter
+// Defines the altitude properties
+//
+message AltitudeFilter{
+  int32 minAltitude = 1; // Minimum altitude a threat must be for display
+  int32 maxAltitude = 2; // Maximum altitude a threat must be for display
+}
+
+//
+// PriorityFilter
+// Defines the priority properties for an Inclusive filter
+//
+message PriorityFilter{
+  int32 priority = 1; // The max value a threat's priority must be for display
+}
+
+//
+// ExclusiveFilterInfo
+// Defines the properties for an exclusive filter
+//
+message ExclusiveFilterInfo{
+  AltitudeFilter altitude = 1; // Altitude filter information
+  SpeedFilter speed = 2; // Speed filter information
+}
+
+//
+// InclusiveFilterInfo
+// Defines the properties for an inclusive filter
+//
+message InclusiveFilterInfo{
+  PriorityFilter minPriority = 1; // Priority filter info
+}
+
+//
+// AreaFilterInfo
+// Defines the properties for the area of a filter
+//
+message AreaFilterInfo{
+  ShapeType profile = 1; // Area filter profile value
+  oneof data{
+    CircleShape circle = 2;
+    PolygonShape polygon = 3;
+  }
+}
+
+//
+// FilterInfo
+// Defines the values for a HMI filter
+//
+message FilterInfo{
+  string name = 1; // Filter name value
+  ClusivityType clusivity = 2; // Clusivity value
+  AreaFilterInfo area = 3; // Associated area filter information
+  oneof data{
+    ExclusiveFilterInfo exclusiveInfo = 4; // Exclusive filter information value
+    InclusiveFilterInfo inclusiveInfo = 5; // Inclusive filter information value
+  }
+}

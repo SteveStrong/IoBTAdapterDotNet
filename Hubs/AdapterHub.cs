@@ -49,9 +49,6 @@ namespace IoBTAdapterDotNet.Hubs
         }
 
 
-
-
-
         public async Task<UDTO_Command> Command(UDTO_Command payload)
         {
             var msg = "Command";

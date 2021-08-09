@@ -1,0 +1,130 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+
+import "Protos/Common.proto";
+
+package medusa.generated;
+option java_package = "medusa.generated";
+option java_outer_classname = "ServiceStatusProto";
+
+
+//
+// ServiceWarningTypeEnum
+// service warning message type
+//
+enum ServiceWarningTypeEnum {
+  SERVICE_WARNING_UNKNOWN = 0;
+  SERVICE_WARNING_NEVER_CONNECTED = 1;
+  SERVICE_WARNING_CONFIGURATION_ERROR = 2;
+  SERVICE_WARNING_TRANSPORT_ERROR = 3;
+  SERVICE_WARNING_GENERAL = 4;
+}
+
+//
+// ServiceTypeEnum
+// For service-status; what kind of service is this?
+//
+enum ServiceTypeEnum {
+  SERVICE_TYPE_UNKNOWN = 0;
+  SERVICE_TYPE_DON = 1;
+  SERVICE_TYPE_SDK = 2;
+  SERVICE_TYPE_EXTERNAL = 3;
+}
+
+
+//
+// ServiceHeartbeatInfo
+// details one service heartbeat message
+// THIS IS HERE JUST TO SAY IT SHOULD GO AWAY
+//todo AFMC2-12235 remove this
+message ServiceHeartbeatInfo {
+  string serviceName = 1;
+  string sessionToken = 2;
+  string buildVersion = 3;
+}
+
+//
+// ServiceWarningInfo
+// Details for one darning message from a service within its status
+//
+message ServiceWarningInfo {
+  ServiceWarningTypeEnum warningType = 1; // The type of warning l
+  string warningMessage = 2; // User-friendly warning message to display and indicate the problem
+}
+
+//
+// ServiceTransportType
+// Using an enumeration for service transport type instead of a string, as the current
+// set is very loosey-goosey in the string being used for a given connection.
+//
+enum ServiceTransportType {
+  SERVICE_TRANSPORT_UNKNOWN = 0;
+  SERVICE_TRANSPORT_FIRE_CONTROLLER = 1;
+  SERVICE_TRANSPORT_VIDEO_CONTROLLER = 2;
+  SERVICE_TRANSPORT_AIR_PICTURE_MODULE = 3;
+  SERVICE_TRANSPORT_THREAT_PRIORITY_MODULE = 4;
+  SERVICE_TRANSPORT_CENTRAL_CONTROLLER = 5;
+  SERVICE_TRANSPORT_HMI_REGISTRATION = 6;
+  SERVICE_TRANSPORT_COMMAND_PORT = 7;
+  // NOTE that alerts and heartbeat transports should be going away or already gone
+}
+
+//
+// TransportStatusInfo
+// Status information for one transport being managed by a service
+//
+message TransportStatusInfo
+{
+  ServiceTransportType type = 1; // the type of transport we are reporting status for
+  string name = 2; // a friendly name for this transport (optional)
+  OperationalStatus status = 3; // transport connection status
+  string error = 4; // error message if not operational
+}
+
+//
+// ServiceSubscriptionResponse
+// This is what is sent back to a subscribed client. Rather than sending a stream of
+// ServiceStatusInfo values back, we send 1 large message periodically. THis is both
+// more efficient and defines one "set" of statuses. Otherwise it would be difficult to
+// determine one complete set of service status values.
+//
+message ServiceSubscriptionResponse {
+  int64 timestamp = 1; // publish timestamp (milliseconds since epoch)
+  repeated ServiceStatusInfo statuses = 2; // set of service statuses within Medusa
+}
+
+//
+// ServiceStatusInfo
+// details one service status message
+//
+message ServiceStatusInfo {
+  int64 timestamp = 1; // status update timestamp (milliseconds since epoch)
+  string serviceName = 2; // name of this service
+  ServiceTypeEnum serviceType = 3; // what kind of service this is
+  OperationalStatus status = 4; // operational status for this service
+  string build = 5; // build / version information for this service
+  bool isRegistered = 6; // if the service has been registered into the system. kind of DON specific.
+  repeated ServiceWarningInfo warnings = 7; // warning messages from the service
+  repeated TransportStatusInfo transports = 8; // status for the transports being maintained by this service
+  // NOTE no device status in here!
+}

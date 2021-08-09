@@ -1,0 +1,215 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+import "google/protobuf/empty.proto";
+import "Protos/Common.proto";
+import "Protos/DeviceCommands.proto";
+import "Protos/Threats.proto";
+import "Protos/SystemConfiguration.proto";
+import "Protos/DevicesStatus.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "DevicesManagerProto";
+
+//
+// The devices manager service provides public calls into the MEDUSA system for
+// device-related actions. The client can request the list of active devices, the
+// status for each device, and subscribe to device status events as they occur. The devices
+// manager also supports the ability for a client to register as a handler for devices
+// external to DON. Once registered, client devices can send status and tracks into the system,
+// and receive commands from the MEDUSA UI.
+//
+service DevicesManager {
+
+	//
+	// getVersion
+	// Get the version of the devices manager.
+	// Input parameters: none
+	// Output: VersionInfo proto class, containing version details
+	//
+	rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+	//
+	// getDevices
+	// Get the set of configured devices maintained within the devices manager. This returns
+	// the configuration information for each pre-defined device.
+	// Input parameters: none
+	// Output: DeviceConfiguration stream, containing one response per defined device in the system
+	//
+	rpc getDevices (google.protobuf.Empty) returns (stream DeviceConfiguration);
+
+	//
+	// getStatuses
+	// Get the most recent set of device statuses maintained within the devices manager.
+	// Input parameters: none
+	// Output: DeviceStatus stream, containing one response per defined device in the system
+	//
+	rpc getStatuses (google.protobuf.Empty) returns (stream DeviceStatus);
+
+	//
+	// requestStatus
+	// This call triggers all devices in the system to send out the most recent status
+	// message, which will be sent to the client via its subscribe() stream.
+	// Input parameters: none
+	// Output: ResponseInfo class contains success/failure, plus a description on failure
+	//
+	rpc requestStatus (google.protobuf.Empty) returns (ResponseInfo);
+
+	//
+	// subscribe
+	// Subscribes to status from devices within the devices manager. The client will continue
+	// to receive DeviceStatus objects until the request is cancelled (see cancelSubscription)
+	// or the server is shut down.
+	// Input parameters: ClientDeviceSubscription contains details for the subscription request
+	// Output: An async stream over which DeviceStatus class values will be received as they
+	//         occur in the system
+	//
+	rpc subscribe (ClientDeviceSubscription) returns (stream DeviceStatus);
+
+	//
+	// cancelSubscription
+	// Cancels the stream being sent via subscribe.
+	// Input parameters: none
+	// Output: ResponseInfo class contains success/failure, plus a description on failure
+	//
+	rpc cancelSubscription (google.protobuf.Empty) returns (ResponseInfo);
+
+	//
+	// registerClientDeviceHandler
+	// This call provides the ability to register a client as a handler for system devices.
+	// This client will be responsible for pushing status and tracks for registered devices.
+	// These devices will need to be defined within the DON configuration file, with the Owner
+	// property set to the client name that will be the owner for that device.
+	// Upon completion of this call, the client should send a DeviceHandlerResponse across the
+	// input stream with a type of DeviceRegistrationResponse for each device that client
+	// would like to own.
+	// Input parameters: the input DeviceHandlerResponse stream, over which the client will
+	//                   send registration, device status, and device tracks
+	// Output: the output DeviceHandlerRequest stream, over which the the server will
+	//         send commands and responses to the client
+	//
+	rpc registerClientDeviceHandler (stream DeviceHandlerResponse) returns (stream DeviceHandlerRequest);
+
+	//
+	// sendDeviceCommand
+	// Support for sending a command to a device.
+	// Input parameters: details about the command to send (and to whom)
+	// Output: ResponseInfo class contains success/failure, plus a description on failure
+	//
+	rpc sendDeviceCommand (DeviceCommandInfo) returns (ResponseInfo);
+
+}
+
+//
+// ClientStatusSubscription
+// inbound device subscription details for this client
+//
+message ClientDeviceSubscription {
+	bool subscribeToStatus = 1; // yes/no subscribe to status coming from devices
+	// TODO: [AFMC2-9626] add server-side filtering
+}
+
+
+//
+// DeviceResponseType
+// When a client sends data for a client-driven device to the SDK, that message can be one
+// of 5 possible types, including a registration message, a data track, or a device status.
+// This tells us which one it is.
+//
+enum DeviceHandlerResponseType {
+	HANDLER_RESPONSE_REGISTRATION = 0; // initial call to register this client device
+	HANDLER_RESPONSE_UNREGISTRATION = 1; // unregister this client device when the client goes away
+	HANDLER_RESPONSE_TRACK = 2; // outbound message is a track
+	HANDLER_RESPONSE_STATUS = 3; // outbound message is a device status
+	HANDLER_RESPONSE_COMMAND_RESPONSE = 4; // outbound message is a response to a device command
+}
+
+//
+// DeviceHandlerResponse
+// Wrapper around one client device handler response sent to the SDK. This is a message
+// coming from a client device handler for one device it handles. This response
+// can represent a status, a track, a device registration message, or a command
+// response.
+//
+message DeviceHandlerResponse {
+	DeviceHandlerResponseType type = 1; // handler response type
+	string sourceDevice = 2; // device this response is for
+	string sourceSystem = 3; // source system responding
+	int64 timestamp = 4; // (milliseconds since epoch)
+
+	// a unique identifier for this client message, set by the client. if the server sends back
+	// a response then ResponseInfo.requestId will match up with this value.
+	string responseId = 5;
+
+	oneof data {
+		// for DeviceHandlerResponseType.HANDLER_RESPONSE_REGISTRATION or HANDLER_RESPONSE_UNREGISTRATION
+		ClientDeviceRegistration registration = 6;
+		// for DeviceHandlerResponseType.HANDLER_RESPONSE_STATUS
+		DeviceStatus status = 7;
+		// for DeviceHandlerResponseType.HANDLER_RESPONSE_TRACK
+		TrackInfo track = 8;
+		// for DeviceHandlerResponseType.HANDLER_RESPONSE_COMMAND_RESPONSE
+		DeviceCommandResponse response = 9;
+	}
+}
+
+
+//
+// ClientDeviceRegistration
+// For a DeviceHandlerResponse with type = DeviceResponseType.DeviceRegistrationResponse
+// or DeviceResponseType.DeviceUnregistrationResponse
+// this is detail information about the device being registered or unregistered.
+// NOTE that this is minimally defined for now
+//
+message ClientDeviceRegistration {
+	string clientName = 1;
+}
+
+//
+// DeviceHandlerRequestType
+// For a DeviceHandlerRequest going from the SDK to a registered client device
+// handler, the request type this message represents
+//
+enum DeviceHandlerRequestType {
+	HANDLER_REQUEST_SERVER_RESPONSE = 0; // the ability to respond back to a client-driven device, after a registration, with success/failure
+	HANDLER_REQUEST_COMMAND = 1; // a command specifically to the device (aim, zoom, slew, whatever)
+	HANDLER_REQUEST_SEND_STATUS = 2; // this is a request to the client to send status for all devices that this handler is handling
+}
+
+//
+// DeviceHandlerRequest
+// These are messages sent from the devices manager to a client device handler. This could be a command, some
+// kind of response, or a status request
+//
+message DeviceHandlerRequest {
+	DeviceHandlerRequestType type = 1; // the request type
+	oneof data {
+		ResponseInfo response = 2; // for type = HANDLER_REQUEST_SERVER_RESPONSE
+		DeviceCommandInfo command = 3; // for type = HANDLER_REQUEST_COMMAND
+		google.protobuf.Empty status = 4; // for type = HANDLER_REQUEST_SEND_STATUS
+	}
+}
+
+
+
+

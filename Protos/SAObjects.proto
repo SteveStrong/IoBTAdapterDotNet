@@ -1,0 +1,123 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+import "Protos/Common.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "SAObjectsProto";
+
+
+//
+// SAObjectAccessType
+// Tells the receiver of an SA object what access she has to that SA object.
+// Options are read-only or read-write.
+//
+enum SAObjectAccessType {
+	SA_ACCESS_UNKNOWN = 0; // unknown/bad state
+	SA_ACCESS_READONLY = 1; // client has read-only access to the associated sa object
+	SA_ACCESS_READWRITE = 2; // client has full read/write/delete access to the associated sa object
+}
+
+//
+// SAObjectSubscriptionResponse
+// This is the message that is returned to a client either from a get or from a subscription when a SAObject change
+// occurs within the system.
+// It tells you what kind of change just occurred - a create/update/delete, and what access this client has to
+// the sa object in question.
+//
+message SAObjectSubscriptionResponse {
+	SystemChangeType change = 1; // the type of change that has occurred - add/update/delete
+	SAObjectAccessType access = 2; // what access this client has to this SA object
+	SAObjectInfo sa = 3; // the SAObject being reported on
+}
+
+//
+// SAObjectGetRequest
+// A request to get a set of SA objects, either via a get or through a subscription.
+// The caller will receive all SA objects that:
+//      1. Are owned by the provided owner id
+//      2. Belong to one of the defined group ids provided
+//
+message SAObjectGetRequest {
+	string ownerId = 1; // for SA object subscription, subscribe to SA objects with this owner id
+	repeated string groupIds = 2; // for SA object subscription, the groups to subscribe to
+}
+
+//
+// SAObjectUpdateResponse
+// This is the message that is returned after a create/update/delete
+//
+message SAObjectUpdateResponse {
+	SAObjectInfo sa = 1; // the SAObject being reported on
+	bool success = 2; // if the operation succeeded or not
+	string details = 3; // details about the success/failure of the operation
+}
+
+//
+// SAObjectUpdateRequest
+// The top level message for creating or modifying an SA object.
+//
+message SAObjectUpdateRequest {
+	// the owner for this SA object. for a create, this defines the only id that can modify or delete this SA object.
+	// For update, will fail if doesn't match creation owner.
+	string ownerId = 1;
+
+	// the SA object itself to create or update
+	SAObjectInfo sa = 2;
+}
+
+//
+// SAObjectDeleteRequest
+// The top level message for deleting an SA object.
+//
+message SAObjectDeleteRequest {
+	string ownerId = 1; // the owner for this SA object. Will fail if doesn't match creation owner.
+	string id = 2; // the unique text identifier for this SA Object (internally created)
+}
+
+//
+// SAObjectInfo
+// The top level message that will be streamed back when a SAObject is requested.
+// It is actually made up of one of several sub-objects which will be streamed back-to-back within this
+// returned set. Each SAObject will contain ONE of the sub-objects types.
+//
+message SAObjectInfo {
+	ShapeType type = 1; // specific shape type
+	string id = 2; // the unique text identifier for this SA Object (internally created)
+	string name = 3; // user-settable name for this SA Object
+
+	// The groups this SAObject is associated with. A groupId represents a set of people
+	// that would like to see this SA object. An example would be "north_range_operators".
+	// Setting no  group ids means that this SA object is PRIVATE, and will only be available to the owner.
+	repeated string groupId = 4;
+
+	// shape details
+	oneof data {
+		CircleShape circle = 5; // SAObject is a circle
+		PolygonShape polygon = 6; // SAObject is a polygon
+		PolyLineShape polyline = 7; // SAObject is a multi-segmented line
+		TextShape text = 8; // SAObject is text
+		PointMarkerShape marker = 9; // SAObject is a point
+	}
+}
+

@@ -1,0 +1,100 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Protos/Common.proto";
+import "Protos/ServiceStatus.proto";
+
+package medusa.generated;
+option java_package = "medusa.generated";
+option java_outer_classname = "WavesManagerProto";
+
+//
+// WavesManager
+// This service is responsible for interacting with the Eaton WAVES MNS system
+//
+service WavesManager {
+
+  //
+  // getVersion
+  // Get the version of the WAVES manager. this is a unary blocking call.
+  //
+  rpc getVersion (google.protobuf.Empty) returns (VersionInfo);
+
+  //
+  // run
+  // Run the given script/file or cancel the run, based on details within WavesRunDetails
+  //
+  rpc run (WavesRunDetails) returns (ResponseInfo);
+
+  //
+  // subscribe
+  // Ability for a client to receive uptime status of the WAVES system
+  // NOTE that we may not need this, as ALL services will start sending their status to SystemsManager,
+  // and she will start reporting out ALL SDK service statuses to subscribed clients. That will be
+  // really neat.
+  //
+  rpc subscribe (ClientWavesSubscription) returns (stream ServiceStatusInfo);
+}
+
+//
+// ClientWavesSubscription
+// inbound subscription details for this client. ability to subscribe to different
+// event types for waves services.
+//
+message ClientWavesSubscription {
+  // for now no filtering, as phase 1 is only for status
+}
+
+//
+// WavesRunDetails
+// details for running a script/file through the WAVES system.
+//
+message WavesRunDetails {
+  string scriptName = 1; // the script/file to run
+  bool cancel = 2; // run (false) or stop the run (true)
+}
+
+//
+// WavesAddress
+// This definition defines one area to alert on a base
+//
+message WavesAddress {
+  string zone = 1;
+  string subZone = 2;
+  string unit = 3;
+}
+
+//
+// WavesArea
+// This definition defines one geographic region to alert. Defines a doughnut
+// area to alert.
+//
+message WavesArea {
+  double latitude = 1; // center of the circle to alert
+  double longitude = 2; // center of the circle to alert
+  double innerRadius = 3; // radius of an inner radius to NOT alert
+  double outerRadius = 4; // radius of an outer radius to alert
+}

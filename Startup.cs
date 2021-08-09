@@ -15,6 +15,7 @@ using Microsoft.OpenApi.Models;
 using IoBTAdapterDotNet.Hubs;
 using IoBTAdapterDotNet.Models;
 
+
 namespace IoBTAdapterDotNet
 {
     public class Startup
@@ -30,6 +31,8 @@ namespace IoBTAdapterDotNet
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+
+            services.AddSingleton<IMedusaEntity, MedusaEntity>();
 
             //https://docs.microsoft.com/en-us/aspnet/core/signalr/configuration?view=aspnetcore-5.0&tabs=dotnet#configure-server-options
             services.AddSignalR(hubOptions =>
@@ -83,6 +86,11 @@ namespace IoBTAdapterDotNet
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHub<AdapterHub>("/adapterHub");
+                endpoints.MapHub<MedusaHub>("/medusaHub");
+                            
+                // Communication with gRPC endpoints must be made through a gRPC client.
+                // To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909
+                //endpoints.MapGrpcService<GreeterService>();
                 endpoints.MapControllers();
             });
         }

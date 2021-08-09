@@ -1,0 +1,210 @@
+/*-------------------------------------------------------------------------------------------------
+| *** UNCLASSIFIED ***
+|--------------------------------------------------------------------------------------------------
+| U.S. Army Research, Development, and Engineering Command
+| Aviation and Missile Research, Development, and Engineering Center
+| Software Engineering Directorate, Redstone Arsenal, AL
+|--------------------------------------------------------------------------------------------------
+| Export-Control Act Warning: Warning - This Document contains technical data whose export is
+| restricted by the Arms Export Control Act (Title 22, U.S.C., Sec 2751, et seq) or the Export
+| Administration Act of 1979, as amended, Title 50, U.S.C., App. 2401 et seq. Violations of these
+| export laws are subject to severe criminal penalties. Disseminate in accordance with provisions
+| of DoD Directive 5230.25.
+|--------------------------------------------------------------------------------------------------
+| Distribution Statement C:  Distribution authorized to U.S. Government Agencies and their
+| contractors, Export Controlled, Critical Technology, 13 Feb 2017. Other request for this document
+| shall be referred to U.S. Army Aviation and Missile Research Development and Engineering Center
+| Software Engineering Directorate, Attn: RDMR-BAW, Redstone Arsenal, AL 35898.
+--------------------------------------------------------------------------------------------------*/
+
+syntax = "proto3";
+option csharp_namespace = "MedusaAdapter";
+
+import "Protos/Common.proto";
+import "Protos/SystemConfiguration.proto";
+import "google/protobuf/wrappers.proto";
+
+package mil.airforce.mc2.sdk.generated;
+option java_package = "mil.airforce.mc2.sdk.generated";
+option java_outer_classname = "DevicesStatusProto";
+
+
+
+//
+// ActionTypeEnum
+// available actions for a given device
+// TODO: [AFMC2-7355] only one definition for this
+//
+enum ActionTypeEnum {
+  ACTION_AIM = 0;
+  ACTION_JAM = 1;
+  ACTION_FIRE = 2;
+  ACTION_SLEW = 3;
+  ACTION_AUTO_RECORD_STREAM = 4;
+  ACTION_RECORD_STREAM = 5;
+  ACTION_FORWARD = 6;
+  ACTION_AFFILIATION = 7;
+  ACTION_ACTIVATE_COUNTERMEASURE = 8;
+  ACTION_NORTHING = 9;
+  ACTION_STREAM_TYPE = 10;
+  ACTION_ENCLOSURE = 11;
+}
+
+//
+// DeviceWarningTypeEnum
+// device warning message type
+// TODO: [AFMC2-7355] only one definition for this
+//
+enum DeviceWarningTypeEnum {
+  DEVICE_WARNING_TRANSPORT_ERROR = 0; // a transport failed to open
+  DEVICE_WARNING_NEVER_CONNECTED = 1; // the device has never connected
+  DEVICE_WARNING_DEVICE_TIMEOUT = 2; // the device timed out
+  DEVICE_WARNING_HARDWARE_ERROR = 3; // the device reports a hardware error
+  DEVICE_WARNING_CONFIGURATION_ERROR = 4; // the device was configured incorrectly
+  DEVICE_WARNING_STANDBY = 5; // THE device is in standby mode
+  DEVICE_WARNING_COMMAND_ERROR = 6; // a faulty command was received
+  DEVICE_WARNING_HARDWARE_LOGGING_ERROR = 7; // a critical log was received
+  DEVICE_WARNING_TEMPERATURE_WARNING = 8; // High or low temperature warning
+  DEVICE_WARNING_STOW_ERROR = 9; // Device failed to stow
+  DEVICE_WARNING_OTHER = 10; // OTHER warnings
+}
+
+
+
+
+//
+// DeviceWarningMessage
+// device warning message
+//
+message DeviceWarningInfo {
+  DeviceWarningTypeEnum warningType = 1; // The type of warning like timeout or hardware-reported error
+  repeated string warningMessages = 2; // User-friendly warning messages to display and indicate the problem
+}
+
+//
+// DeviceStatus
+// Details about one device in the system, and its current status
+//
+message DeviceStatus {
+  int64 timestamp = 1; // status update timestamp (milliseconds since epoch)
+  OperationalStatus operationalStatus = 2; // operational status for this device
+  string sourceDevice = 3; // unique identifier for this device
+  string sourceSystem = 4; // the application/system that is managing this device
+  string deviceName = 5; // user friendly name for this device
+  DeviceTypeEnum deviceType = 6; // specific device type, new devices should be of type generic
+  string symbolCode = 7; // symbol code
+
+  // active status properties
+  DeviceSpatialFactors spatial = 8; // positional information for this device
+  DeviceRfFactors rf = 9; // active RF settings/state for this device
+
+  // A device performing a jam or aim or other countermeasure. this is a high-level boolean
+  // that should have details reflected into the rf field within this message. This is replaced by the field operationStates
+  bool isCountering = 10 [deprecated = true];
+
+  string mission = 11; // name of the current operating mode
+  repeated DeviceStatus subDeviceStatus = 12; // additional Sub devices for status
+  repeated DeviceWarningInfo warnings = 13; // warning messages from the hardware
+  repeated PropertyInfo properties = 14 [deprecated = true]; // additional configuration properties for this device (as needed)  (deprecated)
+
+  // The current operational state for the supported capabilities or capability options of this device.
+  // There should be one message per supported capability unless that capability has options. If options are present,
+  // then there should be one message per option instead of the message for that capability.
+  repeated DeviceOperationalState operationalStates = 15;
+}
+
+//
+// DeviceRfFactors
+// RF data for a device, as a child of DeviceStatus. Contains frequency and countermeasure details attached
+// to a device to share current/active state of RF factors for a device.
+// Child of DeviceStatus
+//
+message DeviceRfFactors {
+  repeated DeviceRfFrequencyInfo frequencies = 1; // details about active operating frequency
+  DeviceRfCountermeasureInfo countermeasures = 2; // details about active countermeasures
+}
+
+//
+// DeviceRfFrequencyQuality
+// Represents the jamming/quality status of a frequency.
+//
+enum DeviceRfFrequencyQuality {
+  FREQ_QUALITY_UNKNOWN = 0; // This frequency’s status is unknown.
+  FREQ_QUALITY_NORMAL = 1; // This frequency is clear, with minimal interference.
+  FREQ_QUALITY_DEGRADED = 2; // This frequency has interference, performance may be degraded.
+  FREQ_QUALITY_JAMMED = 3; // This frequency is currently jammed.
+}
+
+//
+// DeviceRfFrequencyInfo
+// Active frequency details that the sensor is actively operating on.
+// Child of DeviceRfFactors
+//
+message DeviceRfFrequencyInfo {
+  double frequency = 1; // required - The frequency value (Units: MHz)
+  bool transmitting = 2; // required - Whether the system is actively transmitting on this frequency
+  DeviceRfFrequencyQuality quality = 3; // This frequency’s overall quality/jamming status
+}
+
+//
+// DeviceRfCountermeasureState
+// Current ECM state for a device. Used within DeviceRfCountermeasureInfo
+enum DeviceRfCountermeasureState {
+  ECM_STATE_UNKNOWN = 0;
+  ECM_STATE_DISABLED = 1; // the defined ECM is in a disabled state
+  ECM_STATE_INITIALIZING = 2; // the defined ECM is initializing
+  ECM_STATE_RUNNING = 3; // the defined ECM is actively running
+}
+
+//
+// DeviceRfCountermeasureInfo
+// Active countermeasure details for a device, as part of the status for this device.
+// Child of DeviceRfFactors
+//
+message DeviceRfCountermeasureInfo {
+  DeviceRfCountermeasureState state = 1; // current ECM state for a device (running/disabled/initializing)
+  string countermeasure = 2; // the type of ECM that the system is set to use / using.
+  bool locked = 3; // Indicates whether the system is locked to the candidate’s position.
+  CoordinateEcef candidate = 4; // "Candidate" position information, if required by the current ECM type.
+}
+
+//
+// DeviceOperationType
+// The set of operational capabilities that are available to be active or inactive
+// for a given device.
+//
+enum DeviceOperationType {
+  OP_TYPE_UNKNOWN = 0;
+  OP_TYPE_FIRE = 1;
+  OP_TYPE_DEPLOY = 2;
+  OP_TYPE_ENERGIZE = 3;
+  OP_TYPE_PROBE = 4;
+  OP_TYPE_EW = 5; // EW and EW options/countermeasures
+}
+
+//
+// DeviceOperationState
+// The active state for one operational capability or capability option for a given device.
+//
+enum DeviceOperationState {
+  OP_STATE_UNKNOWN = 0; // unknown state
+  OP_STATE_PENDING = 1; // command sent but not responded to yet
+  OP_STATE_ACTIVE = 2; // this capability is currently being performed
+  OP_STATE_INACTIVE = 3; // this capability is not currently being performed
+  OP_STATE_UNAVAILABLE = 4; // this means this capability is not available and should be greyed out in UI
+}
+
+//
+// DeviceOperationalState
+// Details for the current operational state for one capability or capability option for a device. If a capability has
+// options, then each option should be present with a state as separate DeviceOperationalState messages. If no options
+// are present, then there should only be one message for each supported capability.
+//
+message DeviceOperationalState {
+  DeviceOperationType operation = 1; // the operational capability for this device
+  DeviceOperationState state = 2; // the state for this operational capability
+  google.protobuf.StringValue option = 3; // The option for this capability
+}
+
+
+

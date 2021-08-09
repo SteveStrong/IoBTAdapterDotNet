@@ -86,10 +86,10 @@ namespace IoBTAdapterDotNet.Controllers
                 // }
 
                 //broadcast a command to medusa
-                var result = this.medusaEntity.Slew();
+                var result = await this.medusaEntity.Slew();
                 payload.args = new List<string>() {
                     result.Status.ToString(),
-                    result.Message
+                    result.Message.ToString(),
                 };
 
                 await this.medusaHub.Clients.All.SendAsync("Slew", payload);
